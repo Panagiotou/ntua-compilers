@@ -1,0 +1,5 @@
+interpreter/*.cpp
+interpreter/*.o
+interpreter/*.output
+interpreter/parser.hpp
+interpreter/minibasic
