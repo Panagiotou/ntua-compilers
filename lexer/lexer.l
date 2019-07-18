@@ -72,6 +72,7 @@ Esc \\[ "t""n""r""0"\'\"\\]
 
 %x COMMENT
 %option noyywrap
+%option nounput
 
 %%
 "and"             {return T_and;}
