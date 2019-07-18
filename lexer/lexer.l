@@ -34,14 +34,44 @@
   #define T_while         1032
   #define T_id            1033
 
+  #define T_op_eq         1034
+  #define T_op_g          1035
+  #define T_op_l          1036
+  #define T_op_neq        1037
+  #define T_op_leq        1038
+  #define T_op_geq        1039
+  #define T_op_p          1040
+  #define T_op_m          1041
+  #define T_op_mul        1042
+  #define T_op_d          1043
+  #define T_op_point      1044
+  #define T_op_addr       1045
+
+  #define T_op_assign     1046
+  #define T_op_semicol    1047
+  #define T_op_dot        1048
+  #define T_op_lpar       1049
+  #define T_op_rpar       1050
+  #define T_op_col        1051
+  #define T_op_com        1052
+  #define T_op_lbr        1053
+  #define T_op_rbr        1054
+  #define T_int_const     1055
+  #define T_real_const    1056
+  #define T_const_char    1057
+  #define T_const_string  1058
+
   void ERROR (const char msg []);
 %}
 L [A-DF-Za-df-z]
 E [Ee]
 D [0-9]
-W [ \t\n\r\0\\\'\"]
+/* escape sequence */
+W [ \t\n\r\0\\]
 /* printable characters */
-PR [ !#-&\(-\[\]-~]
+PR [ !#-&(-[]-~\/]
+
+%option noyywrap
 
 %%
 "and"             {return T_and;}
@@ -81,7 +111,7 @@ PR [ !#-&\(-\[\]-~]
 {D}+				                              {return T_int_const;}
 ({D}+("."{D}*({E}("+"|"-")?{D}+)?)?)      {return T_real_const;}
 "'"({PR}|{W}|{L}|{E})"'"                  {return T_const_char;}
-"""({PR}|{W}|{L}|{Ε})*"""                 {return T_const_string;}
+"\""({W}|{PR}|{L}|{E})*"\""               {return T_const_string;}
 
 "="                                {return T_op_eq;}
 ">"                                {return T_op_g;}
@@ -106,8 +136,8 @@ PR [ !#-&\(-\[\]-~]
 "["                                {return T_op_lbr;}
 "]"                                {return T_op_rbr;}
 
-{W}+                               {/* nothing */}
-"(*"([^*]+[\*+[^*)])*\*")"         {/* nothing */}
+[ \t\r\n]+                           {return -2;/* nothing */}
+"(*"([^*]+[\*+[^*)])*\*"*)"         {return -1;}
 .                                  {ERROR("illegal token");}
 %%
 int main () {

@@ -1,0 +1,2 @@
+Test lexer:
+  lexer/lexer < lexer/test.pcl
