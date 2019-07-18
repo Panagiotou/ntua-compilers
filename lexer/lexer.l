@@ -62,15 +62,15 @@
   #define T_const_string  1058
 
   void ERROR (const char msg []);
+  int lineno = 1;
 %}
 L [A-DF-Za-df-z]
 E [Ee]
 D [0-9]
 /* escape sequence */
-W [ \t\n\r\0\\]
-/* printable characters */
-PR [ !#-&(-[]-~\/]
+Esc \\[ "t""n""r""0"\'\"\\]
 
+%x COMMENT
 %option noyywrap
 
 %%
@@ -110,8 +110,8 @@ PR [ !#-&(-[]-~\/]
 ({L}|{E})({L}|{E}|{D}|"_")*               { return T_id; }
 {D}+				                              {return T_int_const;}
 ({D}+("."{D}*({E}("+"|"-")?{D}+)?)?)      {return T_real_const;}
-"'"({PR}|{W}|{L}|{E})"'"                  {return T_const_char;}
-"\""({W}|{PR}|{L}|{E})*"\""               {return T_const_string;}
+\'(({Esc})|[^\"\'\\])\'                   {return T_const_char;}        /*'*/
+\"([^\'\"\r\n\\]|({Esc}))*\"              {return T_const_string;}      /*"*/
 
 "="                                {return T_op_eq;}
 ">"                                {return T_op_g;}
@@ -136,8 +136,16 @@ PR [ !#-&(-[]-~\/]
 "["                                {return T_op_lbr;}
 "]"                                {return T_op_rbr;}
 
-[ \t\r\n]+                           {return -2;/* nothing */}
-"(*"([^*]+[\*+[^*)])*\*"*)"         {return -1;}
+[ \t\r]+                           {/* nothing */}
+"(*"([^*]+[\*+[^*)])*\*"*)"        {/* nothing */}
+\n                                 {lineno++;}
+
+"(*" { BEGIN (COMMENT); }
+<COMMENT>"*)" { BEGIN (INITIAL); }
+<COMMENT>\n { lineno++; }
+<COMMENT>"*" { /* nothing */ }
+<COMMENT>[^*\n]+ { /* nothing */ }
+
 .                                  {ERROR("illegal token");}
 %%
 int main () {
@@ -150,6 +158,6 @@ int main () {
 
 void ERROR (const char msg [])
 {
-  fprintf(stderr, "ERROR: %s\n", msg);
+  fprintf(stderr, "ERROR,line %d: %s\n", lineno, msg);
   exit(1);
 }

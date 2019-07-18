@@ -8,7 +8,7 @@ default: lexer/lexer
 lexer/lexer.cpp: lexer/lexer.l
 	flex -s -o lexer/lexer.cpp lexer/lexer.l
 
-lexer/lexer.o: lexer/lexer.cpp lexer/lexer.hpp
+lexer/lexer.o: lexer/lexer.cpp
 
 lexer/lexer: lexer/lexer.o
 
