@@ -13,7 +13,7 @@ lexer/lexer.o: lexer/lexer.cpp
 lexer/lexer: lexer/lexer.o
 
 clean:
-	$(RM) lexer.cpp parser.cpp parser.hpp parser.output *.o
+	$(RM) lexer/lexer.cpp lexer/lexer lexer/*.o
 
 distclean: clean
-	$(RM) minibasic
+	$(RM) pcl
