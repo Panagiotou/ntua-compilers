@@ -77,11 +77,11 @@ PR [ !#-&\(-\[\]-~]
 "var"             {return T_var;}
 "while"           {return T_while;}
 
-({L}|{Ε})({L}|{Ε}|{D}|"_")*	              {return T_id;}
+({L}|{E})({L}|{E}|{D}|"_")*               { return T_id; }
 {D}+				                              {return T_int_const;}
 ({D}+("."{D}*({E}("+"|"-")?{D}+)?)?)      {return T_real_const;}
-"'"(({PR}|{W}|{L}|{Ε})"'"                     {return T_const_char;}
-"""({PR}|{W}|{L}|{Ε})*"""                     {return T_const_string;}
+"'"({PR}|{W}|{L}|{E})"'"                  {return T_const_char;}
+"""({PR}|{W}|{L}|{Ε})*"""                 {return T_const_string;}
 
 "="                                {return T_op_eq;}
 ">"                                {return T_op_g;}
