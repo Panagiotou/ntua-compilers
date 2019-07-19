@@ -137,6 +137,7 @@ Esc \\[ "t""n""r""0"\'\"\\]
 "["                                {return T_op_lbr;}
 "]"                                {return T_op_rbr;}
 
+
 [ \t\r]+                           {/* nothing */}
 "(*"([^*]+[\*+[^*)])*\*"*)"        {/* nothing */}
 \n                                 {lineno++;}
