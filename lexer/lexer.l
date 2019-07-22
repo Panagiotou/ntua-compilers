@@ -1,4 +1,10 @@
 %{
+  #include <cstdio>
+  #include <cstdlib>
+  #include "lexer.hpp"
+  #include "../parser/parser.hpp"
+
+
   #define T_eof           0
   #define T_and           1001
   #define T_array         1002
@@ -74,6 +80,7 @@ Esc \\[ "t""n""r""0"\'\"\\]
 %option noyywrap
 %option nounput
 
+
 %%
 "and"             {return T_and;}
 "array"           {return T_array;}
@@ -148,8 +155,9 @@ Esc \\[ "t""n""r""0"\'\"\\]
 <COMMENT>"*" { /* nothing */ }
 <COMMENT>[^*\n]+ { /* nothing */ }
 
-.                                  {ERROR("illegal token");}
+.                                  {ERROR("illegal token"); /*yyerror("lexical error");*/}
 %%
+/*
 int main () {
   int token;
   do {
@@ -157,9 +165,13 @@ int main () {
     printf("token=%d, lexeme=\"%s\"\n", token, yytext);
   } while (token != T_eof);
 }
-
+*/
 void ERROR (const char msg [])
 {
   fprintf(stderr, "ERROR,line %d: %s\n", lineno, msg);
+  exit(1);
+}
+void yyerror(const char *msg) {
+  fprintf(stderr, "%s\n", msg);
   exit(1);
 }

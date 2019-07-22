@@ -68,11 +68,13 @@
 %left "or"
 %left "and"
 %left "not"
-%nonassoc '=' "<>" '>' '<' "<=" ">="
-%left '^'
-%left '+' '-'
-%left '*' '/' "mod" "div"
+%nonassoc "=" "<>" ">" "<" "<=" ">="
+%right "^"
+%left "@"
+%left "+" "-"
+%left "*" "/" "mod" "div"
 
+%expect 1
 %%
 
 program:
@@ -91,11 +93,14 @@ local:
 
 header:
  "procedure" T_id "(" formal  ";" formal  ")"
+ | "procedure" T_id "(" ")"
  | "function" T_id "(" formal  ";" formal  ")" ":" type
+ | "function" T_id "(" ")" ":" type
  ;
 
 formal:
   "var" T_id  "," T_id ":" type
+  |T_id  "," T_id ":" type
   ;
 
 type:
@@ -104,6 +109,7 @@ type:
  | "boolean"
  | "char"
  | "array" "[" T_int_const "]" "of" type
+ | "array" "of" type
  | "^" type
  ;
 
@@ -114,15 +120,23 @@ block:
 stmt:
   /*nothing*/
   | l-value ":=" expr
+  | expr "^" ":=" expr
   | block
   | call
+  | "if" expr "then" stmt
   | "if" expr "then" stmt "else" stmt
   | "while" expr "do" stmt
   | T_id ":" stmt
   | "goto" T_id
   | "return"
   | "new" "[" expr "]" l-value
+  | "new" "[" expr "]" expr "^"
+  | "new" l-value
+  | "new" expr "^"
   | "dispose" "[" "]" l-value
+  | "dispose" "[" "]" expr "^"
+  | "dispose" l-value
+  | "dispose" expr "^"
   ;
 
 expr:
@@ -134,10 +148,10 @@ l-value:
  T_id
  | "result"
  | T_const_string
- | l-value "[" expr"]"
- | expr "^"
+ | l-value "[" expr "]"
  | "(" l-value ")"
  ;
+
 
 r-value:
  T_int_const
@@ -149,36 +163,31 @@ r-value:
  | "nil"
  | call
  | "@" l-value
- | unop expr
- | expr binop expr
+ | "not" expr
+ | "+" expr
+ | "-" expr
+ | expr "+" expr
+ | expr "-" expr
+ | expr "*" expr
+ | expr "/" expr
+ | expr "div" expr
+ | expr "mod" expr
+ | expr "or" expr
+ | expr "and" expr
+ | expr "=" expr
+ | expr "<>" expr
+ | expr "<" expr
+ | expr "<=" expr
+ | expr ">" expr
+ | expr ">=" expr
  ;
 
 call:
   T_id "(" expr  "," expr  ")"
+  |T_id "(" ")"
   ;
 
-unop:
-  "not"
-  | "+"
-  | "-"
-  ;
 
-binop:
-  "+"
-  | "-"
-  | "*"
-  | "/"
-  | "div"
-  | "mod"
-  | "or"
-  | "and"
-  | "="
-  | "<>"
-  | "<"
-  | "<="
-  | ">"
-  | ">="
-  ;
 
 %%
 
