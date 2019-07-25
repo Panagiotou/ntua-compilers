@@ -129,3 +129,40 @@ private:
   std::string op;
   Expr *right;
 };
+
+
+class UnOp: public Expr {
+public:
+  UnOp(std::string o, Expr *r): op(o), right(r) {}
+  ~UnOp() { delete right; }
+  virtual void printOn(std::ostream &out) const override {
+    out << op << "(" << *right << ")";
+  }
+  virtual void sem() override {
+    if(! op.compare("+") || ! op.compare("-")){
+      if(right->type_check(TYPE_INTEGER) || right->type_check(TYPE_REAL)){
+        type = right->type;
+      }
+      else{
+        ERROR("Type mismatch!"); exit(1);
+      }
+    }
+    if( ! op.compare("not")){
+      if(right->type_check(TYPE_BOOLEAN)){
+        type = TYPE_BOOLEAN;
+      }
+      else{
+        ERROR("Type mismatch!"); exit(1);
+      }
+    }
+  }
+  virtual int eval() const override {
+    if(! op.compare("+")) return  right->eval();
+    if(! op.compare("-")) return -right->eval();
+    if(! op.compare("not")) return !right->eval();
+    return 0;  // this will never be reached.
+  }
+private:
+  std::string op;
+  Expr *right;
+};
