@@ -1,6 +1,10 @@
 %{
   #include <cstdio>
   #include "../lexer/lexer.hpp"
+  #include "../semantic/ast.hpp"
+
+  SymbolTable st;
+  std::vector<int> rt_stack;
 %}
 %token T_and          "and"
 %token T_array        "array"
@@ -74,6 +78,7 @@
 %left "*" "/" "mod" "div"
 
 %expect 1
+
 %%
 
 program:
@@ -103,10 +108,10 @@ formal:
   ;
 
 type:
- "integer"
- | "real"
- | "boolean"
- | "char"
+ "integer"                                  { $$ = TYPE_INTEGER; }
+ | "real"                                   { $$ = TYPE_REAL; }
+ | "boolean"                                { $$ = TYPE_BOOLEAN; }
+ | "char"                                   { $$ = TYPE_CHAR; }
  | "array" "[" T_int_const "]" "of" type
  | "array" "of" type
  | "^" type
@@ -122,9 +127,9 @@ stmt:
   | expr "^" ":=" expr
   | block
   | call
-  | "if" expr "then" stmt
-  | "if" expr "then" stmt "else" stmt
-  | "while" expr "do" stmt
+  | "if" expr "then" stmt               { $$ = new If($2, $4); }
+  | "if" expr "then" stmt "else" stmt   { $$ = new If($2, $4, $6); }
+  | "while" expr "do" stmt              { $$ = new While($2, $4); }
   | T_id ":" stmt
   | "goto" T_id
   | "return"
@@ -162,23 +167,23 @@ r-value:
  | "nil"
  | call
  | "@" l-value
- | "not" expr
- | "+" expr
- | "-" expr
- | expr "+" expr
- | expr "-" expr
- | expr "*" expr
- | expr "/" expr
- | expr "div" expr
- | expr "mod" expr
- | expr "or" expr
- | expr "and" expr
- | expr "=" expr
- | expr "<>" expr
- | expr "<" expr
- | expr "<=" expr
- | expr ">" expr
- | expr ">=" expr
+ | "not" expr       { $$ = new UnOp($1, $2); }
+ | "+" expr         { $$ = new UnOp($1, $2); }
+ | "-" expr         { $$ = new UnOp($1, $2); }
+ | expr "+" expr    { $$ = new BinOp($1, $2, $3); }
+ | expr "-" expr    { $$ = new BinOp($1, $2, $3); }
+ | expr "*" expr    { $$ = new BinOp($1, $2, $3); }
+ | expr "/" expr    { $$ = new BinOp($1, $2, $3); }
+ | expr "div" expr  { $$ = new BinOp($1, $2, $3); }
+ | expr "mod" expr  { $$ = new BinOp($1, $2, $3); }
+ | expr "or" expr   { $$ = new BinOp($1, $2, $3); }
+ | expr "and" expr  { $$ = new BinOp($1, $2, $3); }
+ | expr "=" expr    { $$ = new BinOp($1, $2, $3); }
+ | expr "<>" expr   { $$ = new BinOp($1, $2, $3); }
+ | expr "<" expr    { $$ = new BinOp($1, $2, $3); }
+ | expr "<=" expr   { $$ = new BinOp($1, $2, $3); }
+ | expr ">" expr    { $$ = new BinOp($1, $2, $3); }
+ | expr ">=" expr   { $$ = new BinOp($1, $2, $3); }
  ;
 
 call:

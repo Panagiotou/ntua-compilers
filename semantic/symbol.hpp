@@ -4,7 +4,7 @@
 #include <vector>
 #include <map>
 
-enum Type { TYPE_INTEGER, TYPE_BOOLEAN, TYPE_REAL, TYPE_ARRAY, TYPE_IARRAY};
+enum Type { TYPE_INTEGER, TYPE_BOOLEAN, TYPE_REAL, TYPE_ARRAY, TYPE_IARRAY, TYPE_CHAR};
 
 struct SymbolEntry {
   Type type;
@@ -19,11 +19,11 @@ public:
   Scope(int ofs) : locals(), offset(ofs), size(0) {}
   int getOffset() const { return offset; }
   int getSize() const { return size; }
-  SymbolEntry *lookup(char c) {
+  SymbolEntry *lookup(std::string c) {
     if (locals.find(c) == locals.end()) return nullptr;
     return &(locals[c]);
   }
-  void insert(char c, Type t) {
+  void insert(std::string c, Type t) {
     if (locals.find(c) != locals.end()) {
       std::cerr << "Duplicate variable " << c << std::endl;
       exit(1);
@@ -32,7 +32,7 @@ public:
     ++size;
   }
 private:
-  std::map<char, SymbolEntry> locals;
+  std::map<std::string, SymbolEntry> locals;
   int offset;
   int size;
 };
@@ -44,7 +44,7 @@ public:
     scopes.push_back(Scope(ofs));
   }
   void closeScope() { scopes.pop_back(); };
-  SymbolEntry *lookup(char c) {
+  SymbolEntry *lookup(std::string c) {
     for (auto i = scopes.rbegin(); i != scopes.rend(); ++i) {
       SymbolEntry *e = i->lookup(c);
       if (e != nullptr) return e;
@@ -53,7 +53,7 @@ public:
     exit(1);
   }
   int getSizeOfCurrentScope() const { return scopes.back().getSize(); }
-  void insert(char c, Type t) { scopes.back().insert(c, t); }
+  void insert(std::string c, Type t) { scopes.back().insert(c, t); }
 private:
   std::vector<Scope> scopes;
 };

@@ -12,6 +12,7 @@ inline std::ostream& operator<<(std::ostream &out, Type t) {
   case TYPE_REAL: out << "real"; break;
   case TYPE_ARRAY: out << "array known length"; break;
   case TYPE_IARRAY: out << "array unknown length"; break;
+  case TYPE_CHAR: out << "char"; break;
   }
   return out;
 }
@@ -22,6 +23,8 @@ public:
   virtual void printOn(std::ostream &out) const = 0;
   virtual void sem() {}
 };
+
+extern std::vector<int> rt_stack;
 
 inline std::ostream& operator<<(std::ostream &out, const AST &t) {
   t.printOn(out);
@@ -165,6 +168,25 @@ public:
 private:
   std::string op;
   Expr *right;
+};
+
+class Id: public Expr {
+public:
+  Id(std::string v): var(v), offset(-1){}
+  virtual void printOn(std::ostream &out) const override {
+    out << "Id(" << var << "@" << offset << ")";
+  }
+  virtual int eval() const override {
+    return rt_stack[offset];
+  }
+  virtual void sem() override {
+    SymbolEntry *e = st.lookup(var);
+    type = e->type;
+    offset = e->offset;
+  }
+private:
+  std::string var;
+  int offset;
 };
 
 class Stmt: public AST {
