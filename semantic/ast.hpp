@@ -166,3 +166,39 @@ private:
   std::string op;
   Expr *right;
 };
+
+class Stmt: public AST {
+public:
+  virtual void run() const = 0;
+};
+
+class If: public Stmt {
+public:
+  If(Expr *c, Stmt *s1, Stmt *s2 = nullptr):
+    cond(c), stmt1(s1), stmt2(s2) {}
+  ~If() { delete cond; delete stmt1; delete stmt2; }
+  virtual void printOn(std::ostream &out) const override {
+    out << "If(" << *cond << ", " << *stmt1;
+    if (stmt2 != nullptr) out << ", " << *stmt2;
+    out << ")";
+  }
+  virtual void sem() override {
+    if(cond->type_check(TYPE_BOOLEAN)){
+      stmt1->sem();
+      if (stmt2 != nullptr) stmt2->sem();
+    }
+    else{
+      ERROR("Type mismatch!"); exit(1);
+    }
+  }
+  virtual void run() const override {
+    if (cond->eval())
+      stmt1->run();
+    else if (stmt2 != nullptr)
+      stmt2->run();
+  }
+private:
+  Expr *cond;
+  Stmt *stmt1;
+  Stmt *stmt2;
+};
