@@ -149,7 +149,7 @@ expr:
  ;
 
 l-value:
- T_id
+ T_id                   { $$ = new Id($1); }
  | "result"
  | T_const_string
  | l-value "[" expr "]"
