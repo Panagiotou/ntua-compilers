@@ -1,5 +1,5 @@
 #include "error.h"
-#include "symbol.h"
+#include "symbol.hpp"
 #include <string>
 #include <iostream>
 
@@ -201,4 +201,29 @@ private:
   Expr *cond;
   Stmt *stmt1;
   Stmt *stmt2;
+};
+
+class While: public Stmt {
+public:
+  While(Expr *e, Stmt *s): expr(e), stmt(s) {}
+  ~While() { delete expr; delete stmt; }
+  virtual void printOn(std::ostream &out) const override {
+    out << "While(" << *expr << ", " << *stmt << ")";
+  }
+  virtual void sem() override {
+    if(expr->type_check(TYPE_BOOLEAN)){
+      stmt->sem();
+    }
+    else{
+      ERROR("Type mismatch!"); exit(1);
+    }
+  }
+  virtual void run() const override {
+    while(expr->eval()){
+      stmt->run();
+    }
+  }
+private:
+  Expr *expr;
+  Stmt *stmt;
 };
