@@ -1,7 +1,8 @@
 %{
   #include <cstdio>
-  #include "../lexer/lexer.hpp"
+  #include <string>
   #include "../semantic/ast.hpp"
+  #include "../lexer/lexer.hpp"
 
   SymbolTable st;
   std::vector<int> rt_stack;
@@ -66,18 +67,45 @@
 %token T_real_const
 %token T_const_char
 %token T_const_string
-%token T_id
+%token<var> T_id
 
 /*operators*/
-%left "or"
-%left "and"
-%left "not"
-%nonassoc "=" "<>" ">" "<" "<=" ">="
+%left<op> "or"
+%left<op> "and"
+%left<op> "not"
+%nonassoc<op> "=" "<>" ">" "<" "<=" ">="
 
-%left "+" "-"
-%left "*" "/" "mod" "div"
+%left<op> "+" "-"
+%left<op> "*" "/" "mod" "div"
 
 %expect 1
+
+%union {
+  Stmt *stmt;
+  Expr *expr;
+  Type type;
+  Rval *rval;
+  Lval *lval;
+  Constint *ci;
+  Constchar *cc;
+  Constreal *cr;
+  Conststring *cs;
+  int num;
+  double re;
+  char var;
+  std::string op;
+}
+
+%type<stmt>  stmt
+%type<expr>  expr
+%type<type>  type
+%type<rval>  r-value
+%type<lval>  l-value
+%type<ci>    T_int_const
+%type<cc>    T_const_char
+%type<cr>    T_real_const
+%type<cs>    T_const_string
+
 
 %%
 
@@ -151,18 +179,18 @@ expr:
 l-value:
  T_id                   { $$ = new Id($1); }
  | "result"
- | T_const_string
+ | T_const_string       { $$ = new Conststring($1); }
  | l-value "[" expr "]"
  | "(" l-value ")"
  ;
 
 
 r-value:
- T_int_const
+ T_int_const        { $$ = new Constint($1); }
  | "true"
  | "false"
- | T_real_const
- | T_const_char
+ | T_real_const     { $$ = new Constreal($1); }
+ | T_const_char     { $$ = new Constchar($1); }
  | "(" r-value ")"
  | "nil"
  | call

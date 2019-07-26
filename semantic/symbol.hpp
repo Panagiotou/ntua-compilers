@@ -4,7 +4,7 @@
 #include <vector>
 #include <map>
 
-enum Type { TYPE_INTEGER, TYPE_BOOLEAN, TYPE_REAL, TYPE_ARRAY, TYPE_IARRAY, TYPE_CHAR};
+enum Type { TYPE_INTEGER, TYPE_BOOLEAN, TYPE_REAL, TYPE_ARRAY, TYPE_IARRAY, TYPE_CHAR, TYPE_STRING};
 
 struct SymbolEntry {
   Type type;

@@ -1,8 +1,11 @@
 %{
   #include <cstdio>
   #include <cstdlib>
+  #include <string>
+  #include "../semantic/ast.hpp"
   #include "lexer.hpp"
   #include "../parser/parser.hpp"
+
 
 
   #define T_eof           0
@@ -67,7 +70,7 @@
   #define T_const_char    1057
   #define T_const_string  1058
 
-  void ERROR (const char msg []);
+  void ERRORLex (const char msg []);
   int lineno = 1;
 %}
 L [A-DF-Za-df-z]
@@ -155,7 +158,7 @@ Esc \\[ "t""n""r""0"\'\"\\]
 <COMMENT>"*" { /* nothing */ }
 <COMMENT>[^*\n]+ { /* nothing */ }
 
-.                                  {ERROR("illegal token"); /*yyerror("lexical error");*/}
+.                                  {ERRORLex("illegal token"); /*yyerror("lexical error");*/}
 %%
 /*
 int main () {
@@ -166,7 +169,7 @@ int main () {
   } while (token != T_eof);
 }
 */
-void ERROR (const char msg [])
+void ERRORLex (const char msg [])
 {
   fprintf(stderr, "ERROR,line %d: %s\n", lineno, msg);
   exit(1);

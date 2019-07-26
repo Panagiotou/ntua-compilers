@@ -13,6 +13,7 @@ inline std::ostream& operator<<(std::ostream &out, Type t) {
   case TYPE_ARRAY: out << "array known length"; break;
   case TYPE_IARRAY: out << "array unknown length"; break;
   case TYPE_CHAR: out << "char"; break;
+  case TYPE_STRING: out << "string"; break;
   }
   return out;
 }
@@ -46,8 +47,10 @@ public:
   Type type;
 };
 
+class Rval: public Expr {};
+class Lval: public Expr {};
 
-class BinOp: public Expr {
+class BinOp: public Rval {
 public:
   BinOp(Expr *l, std::string o, Expr *r): left(l), op(o), right(r) {}
   ~BinOp() { delete left; delete right; }
@@ -134,7 +137,7 @@ private:
 };
 
 
-class UnOp: public Expr {
+class UnOp: public Rval {
 public:
   UnOp(std::string o, Expr *r): op(o), right(r) {}
   ~UnOp() { delete right; }
@@ -170,7 +173,7 @@ private:
   Expr *right;
 };
 
-class Id: public Expr {
+class Id: public Lval {
 public:
   Id(std::string v): var(v), offset(-1){}
   virtual void printOn(std::ostream &out) const override {
@@ -188,6 +191,56 @@ private:
   std::string var;
   int offset;
 };
+
+
+class Constint: public Rval {
+public:
+  Constint(int c): con(c) {}
+  virtual void printOn(std::ostream &out) const override {
+    out << "Const(" << con << ")";
+  }
+  virtual int eval() const override { return con; }
+  virtual void sem() override { type = TYPE_INTEGER; }
+private:
+  int con;
+};
+
+class Constchar: public Rval {
+public:
+  Constchar(char c): con(c) {}
+  virtual void printOn(std::ostream &out) const override {
+    out << "Const(" << con << ")";
+  }
+  virtual int eval() const override { return 0; } //wrong
+  virtual void sem() override { type = TYPE_CHAR; }
+private:
+  char con;
+};
+
+class Conststring: public Lval {
+public:
+  Conststring(std::string c): con(c) {}
+  virtual void printOn(std::ostream &out) const override {
+    out << "Const(" << con << ")";
+  }
+  virtual int eval() const override { return 0; } //wrong
+  virtual void sem() override { type = TYPE_STRING; }
+private:
+  std::string con;
+};
+
+class Constreal: public Rval {
+public:
+  Constreal(double c): con(c) {}
+  virtual void printOn(std::ostream &out) const override {
+    out << "Const(" << con << ")";
+  }
+  virtual int eval() const override { return 0; } //wrong
+  virtual void sem() override { type = TYPE_REAL; }
+private:
+  double con;
+};
+
 
 class Stmt: public AST {
 public:
