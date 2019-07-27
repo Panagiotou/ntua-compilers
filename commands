@@ -1,2 +1,6 @@
 Test lexer:
-  lexer/lexer < lexer/test.pcl            
+  lexer/lexer < lexer/test.pcl
+
+
+Test parser:
+  pcl < lexer/test.pcl

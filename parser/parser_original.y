@@ -144,10 +144,10 @@ formal:
   ;
 
 type:
- "integer"                                  { $$ = TYPE_INTEGER; }
- | "real"                                   { $$ = TYPE_REAL; }
- | "boolean"                                { $$ = TYPE_BOOLEAN; }
- | "char"                                   { $$ = TYPE_CHAR; }
+ "integer"
+ | "real"
+ | "boolean"
+ | "char"
  | "array" '[' T_int_const ']' "of" type
  | "array" "of" type
  | '^' type
@@ -168,9 +168,9 @@ stmt:
   | expr '^' ":=" expr
   | block
   | call
-  | "if" expr "then" stmt { $$ = new If($2, $4); }
-  | "if" expr "then" stmt "else" stmt { $$ = new If($2, $4, $6); }
-  | "while" expr "do" stmt { $$ = new While($2, $4); }
+  | "if" expr "then" stmt
+  | "if" expr "then" stmt "else" stmt
+  | "while" expr "do" stmt
   | T_id ':' stmt
   | "goto" T_id
   | "return"
@@ -190,41 +190,41 @@ expr:
  ;
 
 l-value:
- T_id { $$ = new Id($1); }
+ T_id
  | "result"
- | T_const_string { $$ = new Conststring($1); }
+ | T_const_string
  | l-value '[' expr ']'
  | '(' l-value ')'
  ;
 
 
 r-value:
- T_int_const { $$ = new Constint($1); }
+ T_int_const
  | "true"
  | "false"
- | T_real_const { $$ = new Constreal($1); }
- | T_const_char { $$ = new Constchar($1); }
+ | T_real_const
+ | T_const_char
  | '(' r-value ')'
  | "nil"
  | call
  | '@' l-value
- | "not" expr { $$ = new UnOp($1, $2); }
- | '+' expr { $$ = new UnOp($1, $2); }
- | '-' expr { $$ = new UnOp($1, $2); }
- | expr '+' expr { $$ = new BinOp($1, $2, $3); }
- | expr '-' expr { $$ = new BinOp($1, $2, $3); }
- | expr '*' expr { $$ = new BinOp($1, $2, $3); }
- | expr '/' expr { $$ = new BinOp($1, $2, $3); }
- | expr "div" expr { $$ = new BinOp($1, $2, $3); }
- | expr "mod" expr { $$ = new BinOp($1, $2, $3); }
- | expr "or" expr { $$ = new BinOp($1, $2, $3); }
- | expr "and" expr { $$ = new BinOp($1, $2, $3); }
- | expr '=' expr { $$ = new BinOp($1, $2, $3); }
- | expr "<>" expr { $$ = new BinOp($1, $2, $3); }
- | expr '<' expr { $$ = new BinOp($1, $2, $3); }
- | expr "<=" expr { $$ = new BinOp($1, $2, $3); }
- | expr '>' expr { $$ = new BinOp($1, $2, $3); }
- | expr ">=" expr { $$ = new BinOp($1, $2, $3); }
+ | "not" expr
+ | '+' expr
+ | '-' expr
+ | expr '+' expr
+ | expr '-' expr
+ | expr '*' expr
+ | expr '/' expr
+ | expr "div" expr
+ | expr "mod" expr
+ | expr "or" expr
+ | expr "and" expr
+ | expr '=' expr
+ | expr "<>" expr
+ | expr '<' expr
+ | expr "<=" expr
+ | expr '>' expr
+ | expr ">=" expr
  ;
 
 call:

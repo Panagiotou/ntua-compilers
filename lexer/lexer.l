@@ -5,73 +5,7 @@
   #include "../semantic/ast.hpp"
   #include "lexer.hpp"
   #include "../parser/parser.hpp"
-
-
-
-  #define T_eof           0
-  #define T_and           1001
-  #define T_array         1002
-  #define T_begin         1003
-  #define T_boolean       1004
-  #define T_char          1005
-  #define T_dispose       1006
-  #define T_div           1007
-  #define T_do            1008
-  #define T_else          1009
-  #define T_end           1010
-  #define T_false         1011
-  #define T_forward       1012
-  #define T_function      1013
-  #define T_goto          1014
-  #define T_if            1015
-  #define T_integer       1016
-  #define T_label         1017
-  #define T_mod           1018
-  #define T_new           1019
-  #define T_nil           1020
-  #define T_not           1021
-  #define T_of            1022
-  #define T_or            1023
-  #define T_procedure     1024
-  #define T_program       1025
-  #define T_real          1026
-  #define T_result        1027
-  #define T_return        1028
-  #define T_then          1029
-  #define T_true          1030
-  #define T_var           1031
-  #define T_while         1032
-  #define T_id            1033
-
-  #define T_op_eq         1034
-  #define T_op_g          1035
-  #define T_op_l          1036
-  #define T_op_neq        1037
-  #define T_op_leq        1038
-  #define T_op_geq        1039
-  #define T_op_p          1040
-  #define T_op_m          1041
-  #define T_op_mul        1042
-  #define T_op_d          1043
-  #define T_op_point      1044
-  #define T_op_addr       1045
-
-  #define T_op_assign     1046
-  #define T_op_semicol    1047
-  #define T_op_dot        1048
-  #define T_op_lpar       1049
-  #define T_op_rpar       1050
-  #define T_op_col        1051
-  #define T_op_com        1052
-  #define T_op_lbr        1053
-  #define T_op_rbr        1054
-  #define T_int_const     1055
-  #define T_real_const    1056
-  #define T_const_char    1057
-  #define T_const_string  1058
-
-  void ERRORLex (const char msg []);
-  int lineno = 1;
+  #define T_eof  0
 %}
 L [A-DF-Za-df-z]
 E [Ee]
@@ -79,7 +13,6 @@ D [0-9]
 /* escape sequence */
 Esc \\[ "t""n""r""0"\'\"\\]
 
-%x COMMENT
 %option noyywrap
 %option nounput
 
@@ -118,62 +51,41 @@ Esc \\[ "t""n""r""0"\'\"\\]
 "var"             {return T_var;}
 "while"           {return T_while;}
 
+"<>"                               {return T_op_neq;}
+"<="                               {return T_op_leq;}
+">="                               {return T_op_geq;}
+
 ({L}|{E})({L}|{E}|{D}|"_")*               { return T_id; }
 {D}+				                              {return T_int_const;}
 ({D}+("."{D}*({E}("+"|"-")?{D}+)?)?)      {return T_real_const;}
 \'(({Esc})|[^\"\'\\])\'                   {return T_const_char;}        /*'*/
 \"([^\'\"\r\n\\]|({Esc}))*\"              {return T_const_string;}      /*"*/
 
-"="                                {return T_op_eq;}
-">"                                {return T_op_g;}
-"<"                                {return T_op_l;}
-"<>"                               {return T_op_neq;}
-"<="                               {return T_op_leq;}
-">="                               {return T_op_geq;}
-"+"                                {return T_op_p;}
-"-"                                {return T_op_m;}
-"*"                                {return T_op_mul;}
-"/"                                {return T_op_d;}
-"^"                                {return T_op_point;}
-"@"                                {return T_op_addr;}
+\^{L}({L}|_|{D})*               { return T_op_point;}
+@{L}({L}|_|{D})*                { return T_op_addr; }
+
+[()+\-/%*=^\[\];:!,<>\.]          { return yytext[0]; }
+
 
 ":="                               {return T_op_assign;}
-";"                                {return T_op_semicol;}
-"."                                {return T_op_dot;}
-"("                                {return T_op_lpar;}
-")"                                {return T_op_rpar;}
-":"                                {return T_op_col;}
-","                                {return T_op_com;}
-"["                                {return T_op_lbr;}
-"]"                                {return T_op_rbr;}
 
 
-[ \t\r]+                           {/* nothing */}
+
+[ \t\r\n]+                           {/* nothing */}
 "(*"([^*]+[\*+[^*)])*\*"*)"        {/* nothing */}
-\n                                 {lineno++;}
 
-"(*" { BEGIN (COMMENT); }
-<COMMENT>"*)" { BEGIN (INITIAL); }
-<COMMENT>\n { lineno++; }
-<COMMENT>"*" { /* nothing */ }
-<COMMENT>[^*\n]+ { /* nothing */ }
 
-.                                  {ERRORLex("illegal token"); /*yyerror("lexical error");*/}
+.                                  {yyerror("lexical error");}
 %%
-/*
-int main () {
+
+/* int main () {
   int token;
   do {
     token = yylex();
     printf("token=%d, lexeme=\"%s\"\n", token, yytext);
   } while (token != T_eof);
-}
-*/
-void ERRORLex (const char msg [])
-{
-  fprintf(stderr, "ERROR,line %d: %s\n", lineno, msg);
-  exit(1);
-}
+} */
+
 void yyerror(const char *msg) {
   fprintf(stderr, "%s\n", msg);
   exit(1);
