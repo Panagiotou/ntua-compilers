@@ -58,41 +58,16 @@
 %token T_real_const
 %token T_const_char
 %token T_const_string
-%token<op> T_id
+%token T_id
 
 /*operators*/
-%left<op> '+' '-' '='
-%left<op> '*' "div" "mod" "or"
-%left<op> '(' ')' '[' ']' "<=" ">=" '<' '>' "<>" "and" '/' "not"
-%right<op>  '@' '^'
+%left '+' '-' '='
+%left '*' "div" "mod" "or"
+%left '(' ')' '[' ']' "<=" ">=" '<' '>' "<>" "and" '/' "not"
+%right '@' '^'
 
 %expect 1
 
-%union {
-  Stmt *stmt;
-  Expr *expr;
-  Type type;
-  Rval *rval;
-  Lval *lval;
-  Constint *ci;
-  Constchar *cc;
-  Constreal *cr;
-  Conststring *cs;
-  int num;
-  double re;
-  char var;
-  std::string op;
-}
-
-%type<stmt>  stmt
-%type<expr>  expr
-%type<type>  type
-%type<rval>  r-value
-%type<lval>  l-value
-%type<ci>    T_int_const
-%type<cc>    T_const_char
-%type<cr>    T_real_const
-%type<cs>    T_const_string
 
 %%
 
@@ -122,7 +97,7 @@ local1:
   ;
 
 local2:
-  /*nothing*/
+  T_id local1 ':' type ';'
   | local2 T_id local1 ':' type ';'
   ;
 

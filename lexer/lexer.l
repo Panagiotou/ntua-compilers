@@ -51,9 +51,28 @@ Esc \\[ "t""n""r""0"\'\"\\]
 "var"             {return T_var;}
 "while"           {return T_while;}
 
-"<>"                               {return T_op_neq;}
-"<="                               {return T_op_leq;}
-">="                               {return T_op_geq;}
+"=" {return T_op_eq;}
+">" {return T_op_g;}
+"<" {return T_op_l;}
+"<>" {return T_op_neq;}
+"<=" {return T_op_leq;}
+">=" {return T_op_geq;}
+"+" {return T_op_p;}
+"-" {return T_op_m;}
+"*" {return T_op_mul;}
+"/" {return T_op_d;}
+"^" {return T_op_point;}
+"@" {return T_op_addr;}
+
+":=" {return T_op_assign;}
+";" {return T_op_semicol;}
+"." {return T_op_dot;}
+"(" {return T_op_lpar;}
+")" {return T_op_rpar;}
+":" {return T_op_col;}
+"," {return T_op_com;}
+"[" {return T_op_lbr;}
+"]" {return T_op_rbr;}
 
 ({L}|{E})({L}|{E}|{D}|"_")*               { return T_id; }
 {D}+				                              {return T_int_const;}

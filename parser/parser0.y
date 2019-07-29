@@ -109,7 +109,11 @@
 %%
 
 program:
-  "program" T_id ";" body "."
+  "program" T_id ";" body "." {
+    $2->sem();
+    $4->sem();
+    std::cout << "AST: " << *$4 << std::endl;
+  }
   ;
 
 body:
@@ -148,39 +152,39 @@ decl:
   T_id id_list ":" type ";"
 
 header:
- "procedure" T_id "(" formal formal_list  ")"
+ "procedure" T_id "(" formal  header1  ")"
  | "procedure" T_id "(" ")"
- | "function" T_id "(" formal formal_list  ")" ":" type
+ | "function" T_id "(" formal  ";" formal  ")" ":" type
  | "function" T_id "(" ")" ":" type
  ;
 
-formal_list:
+header1:
   /*nothing*/
-  | formal_list ";" formal
+  | header1 ";" formal
   ;
 
 formal:
-  "var" T_id  id_list ":" type
-  |T_id  id_list ":" type
+  "var" T_id  local1 ":" type
+  |T_id  local1 ":" type
   ;
 
 type:
- "integer"
- | "real"
- | "boolean"
- | "char"
+ "integer"                                  { $$ = TYPE_INTEGER; }
+ | "real"                                   { $$ = TYPE_REAL; }
+ | "boolean"                                { $$ = TYPE_BOOLEAN; }
+ | "char"                                   { $$ = TYPE_CHAR; }
  | "array" "[" T_int_const "]" "of" type
  | "array" "of" type
  | "^" type
  ;
 
 block:
-  "begin" stmt stmt_list "end"
+  "begin" stmt block1 "end"
   ;
 
-stmt_list:
+block1:
   /*nothing*/
-  | stmt_list ";" stmt
+  | block1 ";" stmt
   ;
 
 stmt:
@@ -189,9 +193,9 @@ stmt:
   | expr "^" ":=" expr
   | block
   | call
-  | "if" expr "then" stmt
-  | "if" expr "then" stmt "else" stmt
-  | "while" expr "do" stmt
+  | "if" expr "then" stmt {std::cout<<$2; $$ = new If($2, $4); }
+  | "if" expr "then" stmt "else" stmt { std::cout<<$2; $$ = new If($2, $4, $6); }
+  | "while" expr "do" stmt { std::cout<<$2; $$ = new While($2, $4); }
   | T_id ":" stmt
   | "goto" T_id
   | "return"
@@ -211,51 +215,51 @@ expr:
  ;
 
 l-value:
- T_id
+ T_id { std::cout<<$1; $$ = new Id($1); }
  | "result"
- | T_const_string
+ | T_const_string { std::cout<<$1; $$ = new Conststring($1); }
  | l-value "[" expr "]"
  | "(" l-value ")"
  ;
 
 
 r-value:
- T_int_const
+ T_int_const { std::cout<<$1; $$ = new Constint($1); }
  | "true"
  | "false"
- | T_real_const
- | T_const_char
+ | T_real_const { std::cout<<$1; $$ = new Constreal($1); }
+ | T_const_char { std::cout<<$1; $$ = new Constchar($1); }
  | "(" r-value ")"
  | "nil"
  | call
  | "@" l-value
- | "not" expr
- | "+" expr
- | "-" expr
- | expr "+" expr
- | expr "-" expr
- | expr "*" expr
- | expr "/" expr
- | expr "div" expr
- | expr "mod" expr
- | expr "or" expr
- | expr "and" expr
- | expr "=" expr
- | expr "<>" expr
- | expr "<" expr
- | expr "<=" expr
- | expr ">" expr
- | expr ">=" expr
+ | "not" expr { std::cout<<$1; $$ = new UnOp($1, $2); }
+ | "+" expr { std::cout<<$1; $$ = new UnOp($1, $2); }
+ | "-" expr { std::cout<<$1; $$ = new UnOp($1, $2); }
+ | expr "+" expr { std::cout<<$1; $$ = new BinOp($1, $2, $3); }
+ | expr "-" expr { std::cout<<$1; $$ = new BinOp($1, $2, $3); }
+ | expr "*" expr { std::cout<<$1; $$ = new BinOp($1, $2, $3); }
+ | expr "/" expr { std::cout<<$1; $$ = new BinOp($1, $2, $3); }
+ | expr "div" expr { std::cout<<$1; $$ = new BinOp($1, $2, $3); }
+ | expr "mod" expr { std::cout<<$1; $$ = new BinOp($1, $2, $3); }
+ | expr "or" expr { std::cout<<$1; $$ = new BinOp($1, $2, $3); }
+ | expr "and" expr { std::cout<<$1; $$ = new BinOp($1, $2, $3); }
+ | expr "=" expr { std::cout<<$1; $$ = new BinOp($1, $2, $3); }
+ | expr "<>" expr { std::cout<<$1; $$ = new BinOp($1, $2, $3); }
+ | expr "<" expr { std::cout<<$1; $$ = new BinOp($1, $2, $3); }
+ | expr "<=" expr { std::cout<<$1; $$ = new BinOp($1, $2, $3); }
+ | expr ">" expr { std::cout<<$1; $$ = new BinOp($1, $2, $3); }
+ | expr ">=" expr { std::cout<<$1; $$ = new BinOp($1, $2, $3); }
  ;
 
 call:
-  T_id "(" expr  expr_list  ")"
+  T_id "(" expr  call1  ")"
   |T_id "(" ")"
   ;
 
-expr_list:
+call1:
   /*nothing*/
-  | expr_list "," expr
+  | call1 "," expr
   ;
 
 

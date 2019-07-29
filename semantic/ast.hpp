@@ -1,9 +1,9 @@
-#include "error.h"
+#include "../error.h"
 #include "symbol.hpp"
-#include <string>
+#include <cstring>
 #include <iostream>
 
-void ERROR (const char * fmt, ...);
+#define DEBUG true
 
 inline std::ostream& operator<<(std::ostream &out, Type t) {
   switch (t) {
@@ -23,6 +23,9 @@ public:
   virtual ~AST() {}
   virtual void printOn(std::ostream &out) const = 0;
   virtual void sem() {}
+  void ERROR (const char * fmt, ...){
+    std::cout << fmt ;
+  };
 };
 
 extern std::vector<int> rt_stack;
@@ -31,6 +34,7 @@ inline std::ostream& operator<<(std::ostream &out, const AST &t) {
   t.printOn(out);
   return out;
 }
+
 
 class Expr: public AST {
 public:
@@ -52,7 +56,11 @@ class Lval: public Expr {};
 
 class BinOp: public Rval {
 public:
-  BinOp(Expr *l, std::string o, Expr *r): left(l), op(o), right(r) {}
+  BinOp(Expr *l, char *o, Expr *r): left(l), op(o), right(r) {
+    if(DEBUG){
+      this->printOn(std::cout);
+    }
+   }
   ~BinOp() { delete left; delete right; }
   virtual void printOn(std::ostream &out) const override {
     out << op << "(" << *left << ", " << *right << ")";
@@ -61,7 +69,7 @@ public:
     return ((left->type_check(TYPE_REAL) && right->type_check(TYPE_INTEGER))||(left->type_check(TYPE_INTEGER) && right->type_check(TYPE_REAL))||(left->type_check(TYPE_REAL) && right->type_check(TYPE_REAL))||(left->type_check(TYPE_INTEGER) && right->type_check(TYPE_INTEGER)));
   }
   virtual void sem() override {
-    if(! op.compare("+") || ! op.compare("*") || ! op.compare("-")){
+    if(! strcmp(op, "+") || ! strcmp(op, "*") || ! strcmp(op, "-")){
       if( left->type_check(TYPE_INTEGER) && right->type_check(TYPE_INTEGER)){
         type = TYPE_INTEGER;
       }
@@ -72,7 +80,7 @@ public:
         ERROR("Type mismatch!"); exit(1);
       }
     }
-    if(! op.compare("/")){
+    if(! strcmp(op, "/")){
       if(check_number(left, right)){
         type = TYPE_REAL;
       }
@@ -80,7 +88,7 @@ public:
         ERROR("Type mismatch!"); exit(1);
       }
     }
-    if(! op.compare("mod") || ! op.compare("div")){
+    if(! strcmp(op, "mod") || ! strcmp(op, "div")){
       if( left->type_check(TYPE_INTEGER) && right->type_check(TYPE_INTEGER)){
         type = TYPE_INTEGER;
       }
@@ -88,7 +96,7 @@ public:
         ERROR("Type mismatch!"); exit(1);
       }
     }
-    if(! op.compare("=") || ! op.compare("<>")){
+    if(! strcmp(op, "=") || ! strcmp(op, "<>")){
       if(check_number(left, right) || ((left->type == right->type) && (!left->type_check(TYPE_ARRAY) || !left->type_check(TYPE_IARRAY)))){
         type = TYPE_BOOLEAN;
       }
@@ -96,7 +104,7 @@ public:
         ERROR("Type mismatch!"); exit(1);
       }
     }
-    if(! op.compare("<") || ! op.compare(">") || ! op.compare("<=") || ! op.compare(">=")){
+    if(! strcmp(op, "<") || ! strcmp(op, ">") || ! strcmp(op, "<=") || ! strcmp(op, ">=")){
       if(check_number(left, right)){
         type = TYPE_BOOLEAN;
       }
@@ -104,7 +112,7 @@ public:
         ERROR("Type mismatch!"); exit(1);
       }
     }
-    if(! op.compare("or") || ! op.compare("and")){
+    if(! strcmp(op, "or") || ! strcmp(op, "and")){
       if(left->type_check(TYPE_BOOLEAN) && right->type_check(TYPE_BOOLEAN)){
         type = TYPE_BOOLEAN;
       }
@@ -114,38 +122,40 @@ public:
     }
   }
   virtual int eval() const override {
-    if(! op.compare("+")) return left->eval() + right->eval();
-    if(! op.compare("-")) return left->eval() - right->eval();
-    if(! op.compare("*")) return left->eval() * right->eval();
-    if(! op.compare("/")) return left->eval() / right->eval();
-    if(! op.compare("=")) return left->eval() == right->eval();
-    if(! op.compare("<")) return left->eval() < right->eval();
-    if(! op.compare(">")) return left->eval() > right->eval();
-    if(! op.compare("<=")) return left->eval() <= right->eval();
-    if(! op.compare(">=")) return left->eval() >= right->eval();
-    if(! op.compare("<>")) return left->eval() != right->eval();
-    if(! op.compare("div")) return left->eval() / right->eval();
-    if(! op.compare("mod")) return left->eval() % right->eval();
-    if(! op.compare("or")) return left->eval() || right->eval();
-    if(! op.compare("and")) return left->eval() && right->eval();
+    if(! strcmp(op, "+")) return left->eval() + right->eval();
+    if(! strcmp(op, "-")) return left->eval() - right->eval();
+    if(! strcmp(op, "*")) return left->eval() * right->eval();
+    if(! strcmp(op, "/")) return left->eval() / right->eval();
+    if(! strcmp(op, "=")) return left->eval() == right->eval();
+    if(! strcmp(op, "<")) return left->eval() < right->eval();
+    if(! strcmp(op, ">")) return left->eval() > right->eval();
+    if(! strcmp(op, "<=")) return left->eval() <= right->eval();
+    if(! strcmp(op, ">=")) return left->eval() >= right->eval();
+    if(! strcmp(op, "<>")) return left->eval() != right->eval();
+    if(! strcmp(op, "div")) return left->eval() / right->eval();
+    if(! strcmp(op, "mod")) return left->eval() % right->eval();
+    if(! strcmp(op, "or")) return left->eval() || right->eval();
+    if(! strcmp(op, "and")) return left->eval() && right->eval();
     return 0;  // this will never be reached.
   }
 private:
   Expr *left;
-  std::string op;
+  char *op;
   Expr *right;
 };
 
 
 class UnOp: public Rval {
 public:
-  UnOp(std::string o, Expr *r): op(o), right(r) {}
+  UnOp(char *o, Expr *r): op(o), right(r) {    if(DEBUG){
+        this->printOn(std::cout);
+      }}
   ~UnOp() { delete right; }
   virtual void printOn(std::ostream &out) const override {
     out << op << "(" << *right << ")";
   }
   virtual void sem() override {
-    if(! op.compare("+") || ! op.compare("-")){
+    if(! strcmp(op, "+") || ! strcmp(op, "-")){
       if(right->type_check(TYPE_INTEGER) || right->type_check(TYPE_REAL)){
         type = right->type;
       }
@@ -153,7 +163,7 @@ public:
         ERROR("Type mismatch!"); exit(1);
       }
     }
-    if( ! op.compare("not")){
+    if( ! strcmp(op, "not")){
       if(right->type_check(TYPE_BOOLEAN)){
         type = TYPE_BOOLEAN;
       }
@@ -163,19 +173,21 @@ public:
     }
   }
   virtual int eval() const override {
-    if(! op.compare("+")) return  right->eval();
-    if(! op.compare("-")) return -right->eval();
-    if(! op.compare("not")) return !right->eval();
+    if(! strcmp(op, "+")) return  right->eval();
+    if(! strcmp(op, "-")) return -right->eval();
+    if(! strcmp(op, "not")) return !right->eval();
     return 0;  // this will never be reached.
   }
 private:
-  std::string op;
+  char *op;
   Expr *right;
 };
 
 class Id: public Lval {
 public:
-  Id(std::string v): var(v), offset(-1){}
+  Id(char *v): var(v), offset(-1){     if(DEBUG){
+        this->printOn(std::cout);
+      }}
   virtual void printOn(std::ostream &out) const override {
     out << "Id(" << var << "@" << offset << ")";
   }
@@ -188,14 +200,16 @@ public:
     offset = e->offset;
   }
 private:
-  std::string var;
+  char *var;
   int offset;
 };
 
 
 class Constint: public Rval {
 public:
-  Constint(int c): con(c) {}
+  Constint(int c): con(c) {     if(DEBUG){
+        this->printOn(std::cout);
+      }}
   virtual void printOn(std::ostream &out) const override {
     out << "Const(" << con << ")";
   }
@@ -207,7 +221,9 @@ private:
 
 class Constchar: public Rval {
 public:
-  Constchar(char c): con(c) {}
+  Constchar(char c): con(c) {     if(DEBUG){
+        this->printOn(std::cout);
+      }}
   virtual void printOn(std::ostream &out) const override {
     out << "Const(" << con << ")";
   }
@@ -219,19 +235,23 @@ private:
 
 class Conststring: public Lval {
 public:
-  Conststring(std::string c): con(c) {}
+  Conststring(char *c): con(c) {     if(DEBUG){
+        this->printOn(std::cout);
+      }}
   virtual void printOn(std::ostream &out) const override {
     out << "Const(" << con << ")";
   }
   virtual int eval() const override { return 0; } //wrong
   virtual void sem() override { type = TYPE_STRING; }
 private:
-  std::string con;
+  char *con;
 };
 
 class Constreal: public Rval {
 public:
-  Constreal(double c): con(c) {}
+  Constreal(double c): con(c) {     if(DEBUG){
+        this->printOn(std::cout);
+      }}
   virtual void printOn(std::ostream &out) const override {
     out << "Const(" << con << ")";
   }
@@ -250,7 +270,9 @@ public:
 class If: public Stmt {
 public:
   If(Expr *c, Stmt *s1, Stmt *s2 = nullptr):
-    cond(c), stmt1(s1), stmt2(s2) {}
+    cond(c), stmt1(s1), stmt2(s2) {     if(DEBUG){
+          this->printOn(std::cout);
+        }}
   ~If() { delete cond; delete stmt1; delete stmt2; }
   virtual void printOn(std::ostream &out) const override {
     out << "If(" << *cond << ", " << *stmt1;
@@ -280,7 +302,9 @@ private:
 
 class While: public Stmt {
 public:
-  While(Expr *e, Stmt *s): expr(e), stmt(s) {}
+  While(Expr *e, Stmt *s): expr(e), stmt(s) {     if(DEBUG){
+        this->printOn(std::cout);
+      }}
   ~While() { delete expr; delete stmt; }
   virtual void printOn(std::ostream &out) const override {
     out << "While(" << *expr << ", " << *stmt << ")";

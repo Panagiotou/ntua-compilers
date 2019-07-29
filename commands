@@ -3,4 +3,4 @@ Test lexer:
 
 
 Test parser:
-  pcl < lexer/test.pcl
+  ./pcl < lexer/test.pcl

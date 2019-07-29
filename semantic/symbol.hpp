@@ -19,11 +19,11 @@ public:
   Scope(int ofs) : locals(), offset(ofs), size(0) {}
   int getOffset() const { return offset; }
   int getSize() const { return size; }
-  SymbolEntry *lookup(std::string c) {
+  SymbolEntry *lookup(char *c) {
     if (locals.find(c) == locals.end()) return nullptr;
     return &(locals[c]);
   }
-  void insert(std::string c, Type t) {
+  void insert(char *c, Type t) {
     if (locals.find(c) != locals.end()) {
       std::cerr << "Duplicate variable " << c << std::endl;
       exit(1);
@@ -32,7 +32,7 @@ public:
     ++size;
   }
 private:
-  std::map<std::string, SymbolEntry> locals;
+  std::map<char *, SymbolEntry> locals;
   int offset;
   int size;
 };
@@ -44,7 +44,7 @@ public:
     scopes.push_back(Scope(ofs));
   }
   void closeScope() { scopes.pop_back(); };
-  SymbolEntry *lookup(std::string c) {
+  SymbolEntry *lookup(char *c) {
     for (auto i = scopes.rbegin(); i != scopes.rend(); ++i) {
       SymbolEntry *e = i->lookup(c);
       if (e != nullptr) return e;
@@ -53,7 +53,7 @@ public:
     exit(1);
   }
   int getSizeOfCurrentScope() const { return scopes.back().getSize(); }
-  void insert(std::string c, Type t) { scopes.back().insert(c, t); }
+  void insert(char *c, Type t) { scopes.back().insert(c, t); }
 private:
   std::vector<Scope> scopes;
 };
