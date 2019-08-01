@@ -2,6 +2,7 @@
 #include "symbol.hpp"
 #include <cstring>
 #include <iostream>
+#include <vector>
 
 #define DEBUG true
 
@@ -34,7 +35,6 @@ inline std::ostream& operator<<(std::ostream &out, const AST &t) {
   t.printOn(out);
   return out;
 }
-
 
 class Expr: public AST {
 public:
@@ -325,4 +325,163 @@ public:
 private:
   Expr *expr;
   Stmt *stmt;
+};
+
+
+class Block: public AST{
+};
+
+class Header: public AST{
+};
+
+class Id;
+
+class Id_list: public AST{
+public:
+  Id_list(): id_list(){}
+  ~Id_list() {
+    for (char *id : id_list) delete id;
+  }
+  void append_id(char *id) { id_list.push_back(id); }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Id_list(";
+    bool first = true;
+    for (char *id : id_list) {
+      if (!first) out << ", ";
+      first = false;
+      out << id;
+    }
+    out << ")";
+  }
+private:
+   std::vector<char *> id_list;
+};
+
+
+class Label: public AST{
+public:
+  Label(Id_list *i_l){
+    id_list = i_l;
+  };
+  ~Label(){
+    delete id_list;
+  };
+  virtual void printOn(std::ostream &out) const override {
+    out << "Label(";
+    id_list->printOn(out);
+    out << ")";
+  };
+private:
+  Id_list *id_list;
+};
+
+class Decl: public AST {
+public:
+  Decl(Id_list *i_list, Type t){
+    id_list = i_list;
+    type = t;
+  }
+
+  virtual void printOn(std::ostream &out) const override {
+    out << "Decl(";
+    id_list->printOn(out);
+     out << " : " << type << ")";
+  }
+private:
+  Id_list *id_list;
+  Type type;
+};
+
+class Decl_list: public AST{
+public:
+  Decl_list(): decl_list(){}
+  ~Decl_list() {
+    for (Decl *d : decl_list) delete d;
+  }
+  void append_decl(Decl *d) { decl_list.push_back(d); }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Decl_list(";
+    bool first = true;
+    for (Decl *d : decl_list) {
+      if (!first) out << ", ";
+      first = false;
+      d->printOn(out);
+    }
+    out << ")";
+  }
+private:
+   std::vector<Decl *> decl_list;
+};
+
+
+class Body;
+
+
+class Local: public AST{
+public:
+  Local(Decl_list *d){
+    // "var"
+    decl_list = d;
+    localType = "var";
+  };
+  Local(Label *l){
+    // label
+    label = l;
+    localType = "label";
+  };
+  Local(Header *h, Body *b){
+    // function or procedure
+    header = h;
+    body = b;
+    localType = "forp";
+  };
+  Local(Header *h){
+    // forward
+    header = h;
+    localType = "forward";
+  };
+  ~Local(){};
+  virtual void printOn(std::ostream &out) const override {
+    out << "Local()";
+  };
+private:
+  Decl_list *decl_list;
+  Label *label;
+  Header *header;
+  Body *body;
+  char const *localType;
+};
+
+class Body: public AST{
+public:
+  Body(): local_list(), block(){}
+  ~Body() {
+    for (Local *l : local_list) delete l;
+    delete block;
+  }
+  void append_local(Local *l) { local_list.push_back(l); }
+  virtual void sem() override {
+    st.openScope();
+    for (Local *l : local_list) l->sem();
+    block->sem();
+    st.closeScope();
+  }
+  void merge(Block *b) {
+    block = b;
+    delete b;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Body(";
+    bool first = true;
+    for (Local *l : local_list) {
+      if (!first) out << ", ";
+      first = false;
+      l->printOn(out);
+    }
+    out << *block;
+    out << ")";
+  }
+private:
+  std::vector<Local *> local_list;
+  Block *block;
 };

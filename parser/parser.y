@@ -85,6 +85,16 @@
 %expect 1
 
 %union {
+  Body *body;
+  Local *local;
+  Block *block;
+  Header *header;
+  Label *label;
+  Id_list *id_list;
+  Decl *decl;
+  Decl_list *decl_list;
+
+
   Stmt *stmt;
   Expr *expr;
   Type type;
@@ -95,6 +105,15 @@
   char var;
   char *op;
 }
+
+%type<body>  body local_list
+%type<block>  block
+%type<local>  local
+%type<header>  header
+%type<label>  decl_label
+%type<id_list> id_list
+%type<decl_list> decl_list
+%type<decl> decl
 
 %type<stmt>  stmt
 %type<expr>  expr
@@ -109,43 +128,47 @@
 %%
 
 program:
-  "program" T_id ";" body "."
+  "program" T_id ";" body "."{
+    $4->sem();
+    // std::cout << "AST: " << *$1 << std::endl;
+    //$1->run();
+  }
   ;
 
 body:
-  /*nothing*/
-  |local_list block
+  /*nothing*/ { $$ = new Body(); }
+  |local_list block { $1->merge($2); $$ = $1; }
   ;
 
 local_list:
-  /*nothing*/
-  |local_list local
+  /*nothing*/ { $$ = new Body(); }
+  |local_list local { $1->append_local($2); $$ = $1; }
   ;
 
 local:
- "var" decl_list
- | "label" decl_label
- | header ";" body ";"
- | "forward" header ";"
+ "var" decl_list { $$ = new Local($2); }
+ | "label" decl_label { $$ = new Local($2); }
+ | header ";" body ";" { $$ = new Local($1, $3); }
+ | "forward" header ";" { $$ = new Local($2); }
  ;
 
 decl_label:
-  T_id id_list ";"
+  T_id id_list ";" { $2->append_id($1); $$ = new Label($2); }
   ;
 
 
 id_list:
-  /*nothing*/
-  | id_list "," T_id
+  /*nothing*/ { $$ = new Id_list(); }
+  | id_list "," T_id { $1->append_id($3); $$ = $1; }
   ;
 
 decl_list:
-  decl
-  | decl_list decl
+  decl { $$ = new Decl_list(); $$->append_decl($1);}
+  | decl_list decl { $1->append_decl($2); $$ = $1; }
   ;
 
 decl:
-  T_id id_list ":" type ";"
+  T_id id_list ":" type ";" { $2->append_id($1); $$ = new Decl($2, $4);}
 
 header:
  "procedure" T_id "(" formal formal_list  ")"
