@@ -93,11 +93,20 @@
   Id_list *id_list;
   Decl *decl;
   Decl_list *decl_list;
-
-
+  Formal *formal;
+  Formal_list *formal_list;
   Stmt *stmt;
+  Stmt_list *stmt_list;
+  Constint *constint;
+  Constchar *constchar;
+  Constreal *constreal;
+  Conststring *conststring;
   Expr *expr;
-  Type type;
+  Expr_list *expr_list;
+  Call *call;
+
+
+  Type *type;
   Rval *rval;
   Lval *lval;
   int num;
@@ -114,22 +123,28 @@
 %type<id_list> id_list
 %type<decl_list> decl_list
 %type<decl> decl
-
+%type<formal_list> formal_list
+%type<formal> formal
 %type<stmt>  stmt
+%type<stmt_list> stmt_list
+%type<expr_list> expr_list
+%type<call> call
+
+
 %type<expr>  expr
 %type<type>  type
 %type<rval>  r-value
 %type<lval>  l-value
-%type<num>    T_int_const
-%type<var>    T_const_char
-%type<re>    T_real_const
-%type<op>    T_const_string
+%type<constint>    T_int_const
+%type<constchar>    T_const_char
+%type<constreal>    T_real_const
+%type<conststring>    T_const_string
 
 %%
 
 program:
   "program" T_id ";" body "."{
-    $4->sem();
+    //$4->sem();
     // std::cout << "AST: " << *$1 << std::endl;
     //$1->run();
   }
@@ -171,39 +186,39 @@ decl:
   T_id id_list ":" type ";" { $2->append_id($1); $$ = new Decl($2, $4);}
 
 header:
- "procedure" T_id "(" formal formal_list  ")"
- | "procedure" T_id "(" ")"
- | "function" T_id "(" formal formal_list  ")" ":" type
- | "function" T_id "(" ")" ":" type
+ "procedure" T_id "(" formal formal_list  ")" { $5->append_formal($4); $$ = new Procedure($2, $5); }
+ | "procedure" T_id "(" ")" { $$ = new Procedure($2); }
+ | "function" T_id "(" formal formal_list  ")" ":" type { $5->append_formal($4); $$ = new Function($2, $8, $5); }
+ | "function" T_id "(" ")" ":" type { $$ = new Function($2, $6); }
  ;
 
 formal_list:
-  /*nothing*/
-  | formal_list ";" formal
+  /*nothing*/ { $$ = new Formal_list(); }
+  | formal_list ";" formal { $1->append_formal($3); $$ = $1; }
   ;
 
 formal:
-  "var" T_id  id_list ":" type
-  |T_id  id_list ":" type
+  "var" T_id  id_list ":" type { $3->append_id($2); $$ = new Formal($3, $5); }
+  |T_id  id_list ":" type { $2->append_id($1); $$ = new Formal($2, $4); }
   ;
 
 type:
- "integer"
- | "real"
- | "boolean"
- | "char"
- | "array" "[" T_int_const "]" "of" type
- | "array" "of" type
- | "^" type
+ "integer" { $$ = new Integer(); }
+ | "real" { $$ = new Real(); }
+ | "boolean" { $$ = new Boolean(); }
+ | "char" { $$ = new Char(); }
+ | "array" "[" T_int_const "]" "of" type { $$ = new Array($6, $3); }
+ | "array" "of" type { $$ = new Array($3); }
+ | "^" type { $$ = new Pointer($2); }
  ;
 
 block:
-  "begin" stmt stmt_list "end"
+  "begin" stmt stmt_list "end" { $3->append_stmt($2); $$ = new Block($3); }
   ;
 
 stmt_list:
-  /*nothing*/
-  | stmt_list ";" stmt
+  /*nothing*/ { $$ = new Stmt_list(); }
+  | stmt_list ";" stmt { $1->append_stmt($3); $$ = $1; }
   ;
 
 stmt:
@@ -272,13 +287,13 @@ r-value:
  ;
 
 call:
-  T_id "(" expr  expr_list  ")"
-  |T_id "(" ")"
+  T_id "(" expr  expr_list  ")" { $4->append_expr($3); $$ = new Call($1, $4); }
+  |T_id "(" ")" { $$ = new Call($1); }
   ;
 
 expr_list:
-  /*nothing*/
-  | expr_list "," expr
+  /*nothing*/ { $$ = new Expr_list(); }
+  | expr_list "," expr { $1->append_expr($3); $$ = $1; }
   ;
 
 

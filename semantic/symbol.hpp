@@ -4,13 +4,13 @@
 #include <vector>
 #include <map>
 
-enum Type { TYPE_INTEGER, TYPE_BOOLEAN, TYPE_REAL, TYPE_ARRAY, TYPE_IARRAY, TYPE_CHAR, TYPE_STRING};
+enum Types { TYPE_INTEGER, TYPE_BOOLEAN, TYPE_REAL, TYPE_ARRAY, TYPE_IARRAY, TYPE_CHAR, TYPE_STRING, TYPE_POINTER};
 
 struct SymbolEntry {
-  Type type;
+  Types type;
   int offset;
   SymbolEntry() {}
-  SymbolEntry(Type t, int ofs) : type(t), offset(ofs) {}
+  SymbolEntry(Types t, int ofs) : type(t), offset(ofs) {}
 };
 
 class Scope {
@@ -23,7 +23,7 @@ public:
     if (locals.find(c) == locals.end()) return nullptr;
     return &(locals[c]);
   }
-  void insert(char *c, Type t) {
+  void insert(char *c, Types t) {
     if (locals.find(c) != locals.end()) {
       std::cerr << "Duplicate variable " << c << std::endl;
       exit(1);
@@ -53,7 +53,7 @@ public:
     exit(1);
   }
   int getSizeOfCurrentScope() const { return scopes.back().getSize(); }
-  void insert(char *c, Type t) { scopes.back().insert(c, t); }
+  void insert(char *c, Types t) { scopes.back().insert(c, t); }
 private:
   std::vector<Scope> scopes;
 };

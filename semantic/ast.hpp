@@ -6,7 +6,7 @@
 
 #define DEBUG true
 
-inline std::ostream& operator<<(std::ostream &out, Type t) {
+inline std::ostream& operator<<(std::ostream &out, Types t) {
   switch (t) {
   case TYPE_INTEGER: out << "int"; break;
   case TYPE_BOOLEAN: out << "bool"; break;
@@ -15,6 +15,7 @@ inline std::ostream& operator<<(std::ostream &out, Type t) {
   case TYPE_IARRAY: out << "array unknown length"; break;
   case TYPE_CHAR: out << "char"; break;
   case TYPE_STRING: out << "string"; break;
+  case TYPE_POINTER: out << "pointer"; break;
   }
   return out;
 }
@@ -39,7 +40,7 @@ inline std::ostream& operator<<(std::ostream &out, const AST &t) {
 class Expr: public AST {
 public:
   virtual int eval() const = 0;
-  bool type_check(Type t) {
+  bool type_check(Types t) {
     sem();
     if (type != t) {
       return 0;
@@ -48,7 +49,48 @@ public:
       return 1;
     }
   }
-  Type type;
+  Types type;
+};
+
+class Expr_list: public AST{
+public:
+  Expr_list(): expr_list(){}
+  ~Expr_list() {
+    for (Expr *e : expr_list) delete e;
+  }
+  void append_expr(Expr *e) { expr_list.push_back(e); }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Expr_list(";
+    bool first = true;
+    for (Expr *e : expr_list) {
+      if (!first) out << ", ";
+      first = false;
+      e->printOn(out);
+    }
+    out << ")";
+  }
+private:
+   std::vector<Expr *> expr_list;
+};
+
+class Call: public AST{
+public:
+  Call(char *i, Expr_list *e = nullptr){
+    id = i;
+    expr_list = e;
+  }
+  ~Call(){
+    delete id; delete expr_list;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Call(";
+    out << id;
+    expr_list->printOn(out);
+    out << ")";
+  }
+private:
+  char *id;
+  Expr_list *expr_list;
 };
 
 class Rval: public Expr {};
@@ -196,7 +238,7 @@ public:
   }
   virtual void sem() override {
     SymbolEntry *e = st.lookup(var);
-    type = e->type;
+    //Types type = e->type;
     offset = e->offset;
   }
 private:
@@ -205,30 +247,161 @@ private:
 };
 
 
+
+
+class Stmt: public AST {
+public:
+  virtual void run() const = 0;
+};
+
+class Stmt_list: public AST{
+public:
+  Stmt_list(): stmt_list(){}
+  ~Stmt_list() {
+    for (Stmt *s : stmt_list) delete s;
+  }
+  void append_stmt(Stmt *s) { stmt_list.push_back(s); }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Stmt_list(";
+    bool first = true;
+    for (Stmt *s : stmt_list) {
+      if (!first) out << ", ";
+      first = false;
+      s->printOn(out);
+    }
+    out << ")";
+  }
+private:
+   std::vector<Stmt *> stmt_list;
+};
+
+class Type: public AST{
+protected:
+  Types val;
+};
+
+class Integer: public Type{
+public:
+  Integer(): val(TYPE_INTEGER){}
+  virtual void printOn(std::ostream &out) const override {
+    out << "Integer()";
+  }
+private:
+  Types val;
+};
+class String: public Type{
+public:
+  String(): val(TYPE_STRING){}
+  virtual void printOn(std::ostream &out) const override {
+    out << "String()";
+  }
+private:
+  Types val;
+};
+class Char: public Type{
+public:
+  Char(): val(TYPE_CHAR){}
+  virtual void printOn(std::ostream &out) const override {
+    out << "Char()";
+  }
+private:
+  Types val;
+};
+class Real: public Type{
+public:
+  Real(): val(TYPE_REAL){}
+  virtual void printOn(std::ostream &out) const override {
+    out << "Real()";
+  }
+private:
+  Types val;
+};
+class Boolean: public Type{
+public:
+  Boolean(): val(TYPE_BOOLEAN){}
+  virtual void printOn(std::ostream &out) const override {
+    out << "Boolean()";
+  }
+private:
+  Types val;
+};
+
 class Constint: public Rval {
 public:
   Constint(int c): con(c) {     if(DEBUG){
         this->printOn(std::cout);
-      }}
+      }
+    type = new Integer();}
   virtual void printOn(std::ostream &out) const override {
-    out << "Const(" << con << ")";
+    out << "Const(";
+    out << con ;
+    out << ")";
   }
   virtual int eval() const override { return con; }
-  virtual void sem() override { type = TYPE_INTEGER; }
+  virtual void sem() override { type = new Integer(); }
+  Type *type;
+  virtual int get(){
+    return con;
+  }
 private:
   int con;
 };
+
+class Array: public Type{
+public:
+  Array(Type *t, Constint *s = nullptr){
+    val = TYPE_ARRAY;
+    if(s != nullptr) size = s->get();
+    else size = -1;
+    oftype = t;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    if(size > 0){
+      out << "Array(";
+      out << "of size: " << size;
+      out << " and type:"; oftype->printOn(out);
+      out << ")";
+    }
+    else{
+      out << "Array(";
+      out << " of type:"; oftype->printOn(out);
+      out << ")";
+    }
+  }
+private:
+  Type *oftype;
+  int size;
+};
+
+class Pointer: public Type{
+public:
+  Pointer(Type *t){
+    val = TYPE_POINTER;
+    oftype = t;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Pointer(";
+    out << " of type:"; oftype->printOn(out);
+    out << ")";
+  }
+private:
+  Type *oftype;
+};
+
+
 
 class Constchar: public Rval {
 public:
   Constchar(char c): con(c) {     if(DEBUG){
         this->printOn(std::cout);
-      }}
+      }
+    type = new Char();}
   virtual void printOn(std::ostream &out) const override {
     out << "Const(" << con << ")";
   }
   virtual int eval() const override { return 0; } //wrong
-  virtual void sem() override { type = TYPE_CHAR; }
+  virtual void sem() override { type = new Char(); }
+  Type *type;
 private:
   char con;
 };
@@ -237,12 +410,14 @@ class Conststring: public Lval {
 public:
   Conststring(char *c): con(c) {     if(DEBUG){
         this->printOn(std::cout);
-      }}
+      }
+    type = new String();}
   virtual void printOn(std::ostream &out) const override {
     out << "Const(" << con << ")";
   }
   virtual int eval() const override { return 0; } //wrong
-  virtual void sem() override { type = TYPE_STRING; }
+  virtual void sem() override { type = new String(); }
+  Type *type;
 private:
   char *con;
 };
@@ -251,20 +426,16 @@ class Constreal: public Rval {
 public:
   Constreal(double c): con(c) {     if(DEBUG){
         this->printOn(std::cout);
-      }}
+      }
+    type = new Real();}
   virtual void printOn(std::ostream &out) const override {
     out << "Const(" << con << ")";
   }
   virtual int eval() const override { return 0; } //wrong
-  virtual void sem() override { type = TYPE_REAL; }
+  virtual void sem() override { type = new Real(); }
+  Type *type;
 private:
   double con;
-};
-
-
-class Stmt: public AST {
-public:
-  virtual void run() const = 0;
 };
 
 class If: public Stmt {
@@ -329,6 +500,20 @@ private:
 
 
 class Block: public AST{
+public:
+  Block(Stmt_list *s){
+    stmt_list = s;
+  }
+  ~Block(){
+    delete stmt_list;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Block(";
+    stmt_list->printOn(out);
+    out << ")";
+  }
+private:
+  Stmt_list *stmt_list;
 };
 
 class Header: public AST{
@@ -377,7 +562,7 @@ private:
 
 class Decl: public AST {
 public:
-  Decl(Id_list *i_list, Type t){
+  Decl(Id_list *i_list, Type *t){
     id_list = i_list;
     type = t;
   }
@@ -389,7 +574,7 @@ public:
   }
 private:
   Id_list *id_list;
-  Type type;
+  Type *type;
 };
 
 class Decl_list: public AST{
@@ -413,6 +598,87 @@ private:
    std::vector<Decl *> decl_list;
 };
 
+
+class Formal: public AST {
+public:
+  Formal(Id_list *i_list, Type *t){
+    id_list = i_list;
+    type = t;
+  }
+
+  virtual void printOn(std::ostream &out) const override {
+    out << "Formal(";
+    id_list->printOn(out);
+     out << " : " << type << ")";
+  }
+private:
+  Id_list *id_list;
+  Type *type;
+};
+
+class Formal_list: public AST{
+public:
+  Formal_list(): formal_list(){}
+  ~Formal_list() {
+    for (Formal *f : formal_list) delete f;
+  }
+  void append_formal(Formal *f) { formal_list.push_back(f); }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Formal_list(";
+    bool first = true;
+    for (Formal *f : formal_list) {
+      if (!first) out << ", ";
+      first = false;
+      f->printOn(out);
+    }
+    out << ")";
+  }
+private:
+   std::vector<Formal *> formal_list;
+};
+
+class Procedure: public Header{
+public:
+  Procedure(char *i, Formal_list *f = nullptr){
+    id = i;
+    formal_list = f;
+  }
+  ~Procedure(){
+    delete id; delete formal_list;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Procedure(";
+    out << id;
+    formal_list->printOn(out);
+    out << ")";
+  }
+private:
+  char *id;
+  Formal_list *formal_list;
+};
+
+class Function: public Header{
+public:
+  Function(char *i, Type *t, Formal_list *f = nullptr){
+    id = i;
+    type = t;
+    formal_list = f;
+  }
+  ~Function(){
+    delete id; delete formal_list;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Function(";
+    out << id;
+    formal_list->printOn(out);
+    out << type;
+    out << ")";
+  }
+private:
+  char *id;
+  Type *type;
+  Formal_list *formal_list;
+};
 
 class Body;
 
