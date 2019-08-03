@@ -4,7 +4,7 @@
 #include <iostream>
 #include <vector>
 
-#define DEBUG true
+
 
 inline std::ostream& operator<<(std::ostream &out, Types t) {
   switch (t) {
@@ -75,7 +75,7 @@ private:
 
 class Call: public AST{
 public:
-  Call(char *i, Expr_list *e = nullptr){
+  Call(std::string* i, Expr_list *e = nullptr){
     id = i;
     expr_list = e;
   }
@@ -89,7 +89,7 @@ public:
     out << ")";
   }
 private:
-  char *id;
+  std::string *id;
   Expr_list *expr_list;
 };
 
@@ -99,9 +99,6 @@ class Lval: public Expr {};
 class BinOp: public Rval {
 public:
   BinOp(Expr *l, char *o, Expr *r): left(l), op(o), right(r) {
-    if(DEBUG){
-      this->printOn(std::cout);
-    }
    }
   ~BinOp() { delete left; delete right; }
   virtual void printOn(std::ostream &out) const override {
@@ -189,9 +186,7 @@ private:
 
 class UnOp: public Rval {
 public:
-  UnOp(char *o, Expr *r): op(o), right(r) {    if(DEBUG){
-        this->printOn(std::cout);
-      }}
+  UnOp(char *o, Expr *r): op(o), right(r) {}
   ~UnOp() { delete right; }
   virtual void printOn(std::ostream &out) const override {
     out << op << "(" << *right << ")";
@@ -227,9 +222,7 @@ private:
 
 class Id: public Lval {
 public:
-  Id(char *v): var(v), offset(-1){     if(DEBUG){
-        this->printOn(std::cout);
-      }}
+  Id(char *v): var(v), offset(-1){ }
   virtual void printOn(std::ostream &out) const override {
     out << "Id(" << var << "@" << offset << ")";
   }
@@ -328,9 +321,7 @@ private:
 
 class Constint: public Rval {
 public:
-  Constint(int c): con(c) {     if(DEBUG){
-        this->printOn(std::cout);
-      }
+  Constint(int c): con(c) {
     type = new Integer();}
   virtual void printOn(std::ostream &out) const override {
     out << "Const(";
@@ -392,9 +383,7 @@ private:
 
 class Constchar: public Rval {
 public:
-  Constchar(char c): con(c) {     if(DEBUG){
-        this->printOn(std::cout);
-      }
+  Constchar(char c): con(c) {
     type = new Char();}
   virtual void printOn(std::ostream &out) const override {
     out << "Const(" << con << ")";
@@ -408,9 +397,7 @@ private:
 
 class Conststring: public Lval {
 public:
-  Conststring(char *c): con(c) {     if(DEBUG){
-        this->printOn(std::cout);
-      }
+  Conststring(char *c): con(c) {
     type = new String();}
   virtual void printOn(std::ostream &out) const override {
     out << "Const(" << con << ")";
@@ -424,9 +411,7 @@ private:
 
 class Constreal: public Rval {
 public:
-  Constreal(double c): con(c) {     if(DEBUG){
-        this->printOn(std::cout);
-      }
+  Constreal(double c): con(c) {
     type = new Real();}
   virtual void printOn(std::ostream &out) const override {
     out << "Const(" << con << ")";
@@ -441,9 +426,7 @@ private:
 class If: public Stmt {
 public:
   If(Expr *c, Stmt *s1, Stmt *s2 = nullptr):
-    cond(c), stmt1(s1), stmt2(s2) {     if(DEBUG){
-          this->printOn(std::cout);
-        }}
+    cond(c), stmt1(s1), stmt2(s2) {    }
   ~If() { delete cond; delete stmt1; delete stmt2; }
   virtual void printOn(std::ostream &out) const override {
     out << "If(" << *cond << ", " << *stmt1;
@@ -473,9 +456,7 @@ private:
 
 class While: public Stmt {
 public:
-  While(Expr *e, Stmt *s): expr(e), stmt(s) {     if(DEBUG){
-        this->printOn(std::cout);
-      }}
+  While(Expr *e, Stmt *s): expr(e), stmt(s) { }
   ~While() { delete expr; delete stmt; }
   virtual void printOn(std::ostream &out) const override {
     out << "While(" << *expr << ", " << *stmt << ")";
@@ -509,7 +490,7 @@ public:
   }
   virtual void printOn(std::ostream &out) const override {
     out << "Block(";
-    stmt_list->printOn(out);
+    //stmt_list->printOn(out);
     out << ")";
   }
 private:
@@ -525,13 +506,13 @@ class Id_list: public AST{
 public:
   Id_list(): id_list(){}
   ~Id_list() {
-    for (char *id : id_list) delete id;
+    for (std::string* id : id_list) delete id;
   }
-  void append_id(char *id) { id_list.push_back(id); }
+  void append_id(std::string* id) { id_list.push_back(id); }
   virtual void printOn(std::ostream &out) const override {
     out << "Id_list(";
     bool first = true;
-    for (char *id : id_list) {
+    for (std::string* id : id_list) {
       if (!first) out << ", ";
       first = false;
       out << id;
@@ -539,7 +520,7 @@ public:
     out << ")";
   }
 private:
-   std::vector<char *> id_list;
+   std::vector<std::string* > id_list;
 };
 
 
@@ -639,7 +620,7 @@ private:
 
 class Procedure: public Header{
 public:
-  Procedure(char *i, Formal_list *f = nullptr){
+  Procedure(std::string* i, Formal_list *f = nullptr){
     id = i;
     formal_list = f;
   }
@@ -653,13 +634,13 @@ public:
     out << ")";
   }
 private:
-  char *id;
+  std::string* id;
   Formal_list *formal_list;
 };
 
 class Function: public Header{
 public:
-  Function(char *i, Type *t, Formal_list *f = nullptr){
+  Function(std::string* i, Type *t, Formal_list *f = nullptr){
     id = i;
     type = t;
     formal_list = f;
@@ -675,13 +656,12 @@ public:
     out << ")";
   }
 private:
-  char *id;
+  std::string* id;
   Type *type;
   Formal_list *formal_list;
 };
 
 class Body;
-
 
 class Local: public AST{
 public:
@@ -708,14 +688,28 @@ public:
   };
   ~Local(){};
   virtual void printOn(std::ostream &out) const override {
-    out << "Local()";
+    out << "Local(";
+    if(localType.compare("var") == 0){
+      decl_list->printOn(out);
+    }
+    else if(localType.compare("label") == 0){
+      label->printOn(out);
+    }
+    else if(localType.compare("forp") == 0){
+      header->printOn(out);
+      body->printOn(out);
+    }
+    else if(localType.compare("forward") == 0){
+      header->printOn(out);
+    }
+    out << ")";
   };
 private:
   Decl_list *decl_list;
   Label *label;
   Header *header;
   Body *body;
-  char const *localType;
+  std::string localType;
 };
 
 class Body: public AST{
@@ -734,7 +728,6 @@ public:
   }
   void merge(Block *b) {
     block = b;
-    delete b;
   }
   virtual void printOn(std::ostream &out) const override {
     out << "Body(";
@@ -744,7 +737,7 @@ public:
       first = false;
       l->printOn(out);
     }
-    out << *block;
+    if(block) block->printOn(out);
     out << ")";
   }
 private:

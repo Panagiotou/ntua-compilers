@@ -6,7 +6,7 @@
 
   SymbolTable st;
   std::vector<int> rt_stack;
-
+  #define DEBUG true
 %}
 
 %define parse.error verbose
@@ -74,7 +74,7 @@
 %token T_real_const
 %token T_const_char
 %token T_const_string
-%token<op> T_id
+%token<sval> T_id
 
 /*operators*/
 %left<op> "+" "-" "="
@@ -113,6 +113,8 @@
   double re;
   char var;
   char *op;
+
+  std::string* sval;
 }
 
 %type<body>  body local_list
@@ -152,12 +154,12 @@ program:
 
 body:
   /*nothing*/ { $$ = new Body(); }
-  |local_list block { $1->merge($2); $$ = $1; }
+|local_list block { $1->merge($2); $$ = $1; if(DEBUG) $$->printOn(std::cout); }
   ;
 
 local_list:
   /*nothing*/ { $$ = new Body(); }
-  |local_list local { $1->append_local($2); $$ = $1; }
+  |local_list local { $1->append_local($2); $$ = $1; if(DEBUG) $$->printOn(std::cout); }
   ;
 
 local:
