@@ -227,22 +227,22 @@ stmt:
   /*nothing*/
   | l-value ":=" expr
   | expr "^" ":=" expr
-  | block
-  | call
-  | "if" expr "then" stmt
-  | "if" expr "then" stmt "else" stmt
-  | "while" expr "do" stmt
+  | block { $$ = new Block(); }
+  | call { $$ = new Call(); }
+  | "if" expr "then" stmt { $$ = new If($2, $4); }
+  | "if" expr "then" stmt "else" stmt { $$ = new If($2, $4, $6); }
+  | "while" expr "do" stmt { $$ = new While($2, $4); }
   | T_id ":" stmt
-  | "goto" T_id
+  | "goto" T_id { $$ = new Goto($2); }
   | "return"
-  | "new" "[" expr "]" l-value
-  | "new" "[" expr "]" expr "^"
-  | "new" l-value
-  | "new" expr "^"
-  | "dispose" "[" "]" l-value
-  | "dispose" "[" "]" expr "^"
-  | "dispose" l-value
-  | "dispose" expr "^"
+  | "new" "[" expr "]" l-value { $$ = new New($3, $5); }
+  | "new" "[" expr "]" expr "^" { $$ = new New($3, $5); }
+  | "new" l-value { $$ = new New($2); }
+  | "new" expr "^" { $$ = new New($2); }
+  | "dispose" "[" "]" l-value { $$ = new Dispose($4); }
+  | "dispose" "[" "]" expr "^" { $$ = new Dispose($4); }
+  | "dispose" l-value { $$ = new Dispose($2); }
+  | "dispose" expr "^" { $$ = new Dispose($2); }
   ;
 
 expr:

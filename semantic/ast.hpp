@@ -73,28 +73,20 @@ private:
    std::vector<Expr *> expr_list;
 };
 
-class Call: public AST{
-public:
-  Call(std::string* i, Expr_list *e = nullptr){
-    id = i;
-    expr_list = e;
-  }
-  ~Call(){
-    delete id; delete expr_list;
-  }
-  virtual void printOn(std::ostream &out) const override {
-    out << "Call(";
-    out << id;
-    expr_list->printOn(out);
-    out << ")";
-  }
-private:
-  std::string *id;
-  Expr_list *expr_list;
-};
 
-class Rval: public Expr {};
-class Lval: public Expr {};
+
+class Rval: public Expr {
+public:
+  virtual void printOn(std::ostream &out) const override {
+    out << "Lval()";
+  }
+};
+class Lval: public Expr {
+public:
+  virtual void printOn(std::ostream &out) const override {
+    out << "Lval()";
+  }
+};
 
 class BinOp: public Rval {
 public:
@@ -246,6 +238,113 @@ class Stmt: public AST {
 public:
   virtual void run() const = 0;
 };
+
+class Dispose: public Stmt{
+public:
+  Dispose(Lval *l){
+    lval = l;
+    expr = nullptr;
+  }
+  Dispose(Expr *e){
+    expr = e;
+    lval = nullptr;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Dispose(";
+    if(lval) lval->printOn(out);
+    else expr->printOn(out);
+    out << ")";
+  }
+  virtual void run() const override {
+    std::cout << "Running Dispose";
+  }
+private:
+  Lval *lval;
+  Expr *expr;
+};
+
+class Call: public Stmt{
+public:
+  Call(){
+    id = nullptr;
+    expr_list = nullptr;
+  }
+  Call(std::string* i, Expr_list *e = nullptr){
+    id = i;
+    expr_list = e;
+  }
+  ~Call(){
+    delete id; delete expr_list;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Call(";
+    if(id) out << id;
+    if(expr_list) expr_list->printOn(out);
+    out << ")";
+  }
+  virtual void run() const override {
+    std::cout << "Running Call";
+  }
+private:
+  std::string *id;
+  Expr_list *expr_list;
+};
+
+class New: public Stmt{
+public:
+  New(Lval *l){
+    lval = l;
+    exprPointer = nullptr;
+    exprBrackets = nullptr;
+  }
+  New(Expr *e){
+    exprPointer = e;
+    lval = nullptr;
+    exprBrackets = nullptr;
+  }
+  New(Expr *e1, Expr *e2){
+    exprBrackets = e1;
+    exprPointer = e2;
+    lval = nullptr;
+  }
+  New(Expr *e, Lval *l){
+    exprBrackets = e;
+    lval = l;
+    exprPointer = nullptr;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "New(";
+    if(lval) lval->printOn(out);
+    if(exprPointer) exprPointer->printOn(out);
+    if(exprBrackets) exprBrackets->printOn(out);
+    out << ")";
+  }
+  virtual void run() const override {
+    std::cout << "Running New";
+  }
+private:
+  Lval *lval;
+  Expr *exprPointer;
+  Expr *exprBrackets;
+};
+
+class Goto: public Stmt{
+public:
+  Goto(std::string *i){
+    id = i;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Goto(";
+    out << id;
+    out << ")";
+  }
+  virtual void run() const override {
+    std::cout << "Running Goto";
+  }
+private:
+  std::string* id;
+};
+
 
 class Stmt_list: public AST{
 public:
@@ -480,19 +579,22 @@ private:
 };
 
 
-class Block: public AST{
+class Block: public Stmt{
 public:
-  Block(Stmt_list *s){
-    stmt_list = s;
+  Block(Stmt_list *s = nullptr){
+    if(s) stmt_list = s;
   }
   ~Block(){
     delete stmt_list;
   }
   virtual void printOn(std::ostream &out) const override {
     out << "Block(";
-    //stmt_list->printOn(out);
+    //if(stmt_list) stmt_list->printOn(out);
     out << ")";
   }
+virtual void run() const override {
+  std::cout << "Running block";
+}
 private:
   Stmt_list *stmt_list;
 };
@@ -551,7 +653,8 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "Decl(";
     id_list->printOn(out);
-     out << " : " << type << ")";
+     type->printOn(out);
+     out << ")";
   }
 private:
   Id_list *id_list;
@@ -590,8 +693,9 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "Formal(";
     id_list->printOn(out);
-     out << " : " << type << ")";
-  }
+    type->printOn(out);
+    out << ")";
+ }
 private:
   Id_list *id_list;
   Type *type;
@@ -697,7 +801,7 @@ public:
     }
     else if(localType.compare("forp") == 0){
       header->printOn(out);
-      body->printOn(out);
+      //body->printOn(out);
     }
     else if(localType.compare("forward") == 0){
       header->printOn(out);
