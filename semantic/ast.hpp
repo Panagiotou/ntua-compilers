@@ -77,14 +77,16 @@ private:
 
 class Rval: public Expr {
 public:
-  virtual void printOn(std::ostream &out) const override {
-    out << "Lval()";
+  virtual int eval() const override {
+    std::cout << "Evaluating Rval";
+    return -1;
   }
 };
 class Lval: public Expr {
 public:
-  virtual void printOn(std::ostream &out) const override {
-    out << "Lval()";
+  virtual int eval() const override {
+    std::cout << "Evaluating Lval";
+    return -1;
   }
 };
 
@@ -214,7 +216,7 @@ private:
 
 class Id: public Lval {
 public:
-  Id(char *v): var(v), offset(-1){ }
+  Id(std::string *v): var(v), offset(-1){ }
   virtual void printOn(std::ostream &out) const override {
     out << "Id(" << var << "@" << offset << ")";
   }
@@ -222,13 +224,52 @@ public:
     return rt_stack[offset];
   }
   virtual void sem() override {
-    SymbolEntry *e = st.lookup(var);
+    //SymbolEntry *e = st.lookup(var);
     //Types type = e->type;
-    offset = e->offset;
+    //offset = e->offset;
   }
 private:
-  char *var;
+  std::string *var;
   int offset;
+};
+
+class ArrayItem: public Lval {
+public:
+  ArrayItem(Lval *l, Expr *e){
+    lval = l;
+    expr = e;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "ArrayItem(";
+    if(lval)lval->printOn(out);
+    if(expr)expr->printOn(out);
+    out << ")";
+  }
+  virtual int eval() const override {
+    std::cout << "Evaluating ArrayItem";
+    return -1;
+  }
+private:
+  Lval *lval;
+  Expr *expr;
+};
+
+class Reference: public Rval {
+public:
+  Reference(Lval *l){
+    lval = l;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Reference(";
+    if(lval)lval->printOn(out);
+    out << ")";
+  }
+  virtual int eval() const override {
+    std::cout << "Evaluating Reference";
+    return -1;
+  }
+private:
+  Lval *lval;
 };
 
 
@@ -263,6 +304,67 @@ private:
   Expr *expr;
 };
 
+class IdLabel: public Stmt{
+public:
+  IdLabel(std::string* i, Stmt *s){
+    id = i;
+    stmt = s;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "IdLabel(";
+    if(id) out << id;
+    if(stmt) stmt->printOn(out);
+    out << ")";
+  }
+  virtual void run() const override {
+    std::cout << "Running IdLabel";
+  }
+private:
+  std::string* id;
+  Stmt *stmt;
+};
+
+class Assign: public Stmt{
+public:
+  Assign(Lval *l, Expr *e){
+    lval = l;
+    exprRight = e;
+    exprPointer = nullptr;
+  }
+  Assign(Expr *e1, Expr *e2){
+    exprPointer = e1;
+    exprRight = e2;
+    lval = nullptr;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Assign(";
+    if(lval) lval->printOn(out);
+    if(exprPointer) exprPointer->printOn(out);
+    if(exprRight) exprRight->printOn(out);
+    out << ")";
+  }
+  virtual void run() const override {
+    std::cout << "Running Assign";
+  }
+private:
+  Expr *exprPointer;
+  Expr *exprRight;
+  Lval *lval;
+};
+
+class Return: public Stmt{
+public:
+  Return(){};
+  virtual void printOn(std::ostream &out) const override {
+    out << "Return(";
+    out << ")";
+  }
+  virtual void run() const override {
+    std::cout << "Running Return";
+  }
+private:
+};
+
 class Call: public Stmt{
 public:
   Call(){
@@ -284,6 +386,30 @@ public:
   }
   virtual void run() const override {
     std::cout << "Running Call";
+  }
+private:
+  std::string *id;
+  Expr_list *expr_list;
+};
+
+class Callr: public Rval{
+public:
+  Callr(){
+    id = nullptr;
+    expr_list = nullptr;
+  }
+  Callr(std::string* i, Expr_list *e = nullptr){
+    id = i;
+    expr_list = e;
+  }
+  ~Callr(){
+    delete id; delete expr_list;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Callr(";
+    if(id) out << id;
+    if(expr_list) expr_list->printOn(out);
+    out << ")";
   }
 private:
   std::string *id;
@@ -439,9 +565,9 @@ private:
 
 class Array: public Type{
 public:
-  Array(Type *t, Constint *s = nullptr){
+  Array(Type *t, int s = -1){
     val = TYPE_ARRAY;
-    if(s != nullptr) size = s->get();
+    if(s>0) size = s;
     else size = -1;
     oftype = t;
   }
@@ -496,7 +622,7 @@ private:
 
 class Conststring: public Lval {
 public:
-  Conststring(char *c): con(c) {
+  Conststring(std::string *c): con(c) {
     type = new String();}
   virtual void printOn(std::ostream &out) const override {
     out << "Const(" << con << ")";
@@ -505,7 +631,7 @@ public:
   virtual void sem() override { type = new String(); }
   Type *type;
 private:
-  char *con;
+  std::string *con;
 };
 
 class Constreal: public Rval {
@@ -528,8 +654,10 @@ public:
     cond(c), stmt1(s1), stmt2(s2) {    }
   ~If() { delete cond; delete stmt1; delete stmt2; }
   virtual void printOn(std::ostream &out) const override {
-    out << "If(" << *cond << ", " << *stmt1;
-    if (stmt2 != nullptr) out << ", " << *stmt2;
+    out << "If(";
+    //if(cond) cond->printOn(out);
+    if(stmt1) stmt1->printOn(out);
+    if (stmt2) stmt2->printOn(out);
     out << ")";
   }
   virtual void sem() override {
@@ -589,7 +717,7 @@ public:
   }
   virtual void printOn(std::ostream &out) const override {
     out << "Block(";
-    //if(stmt_list) stmt_list->printOn(out);
+    if(stmt_list) stmt_list->printOn(out);
     out << ")";
   }
 virtual void run() const override {
@@ -816,17 +944,40 @@ private:
   std::string localType;
 };
 
-class Body: public AST{
+class Local_list: public AST{
 public:
-  Body(): local_list(), block(){}
-  ~Body() {
+  Local_list(): local_list(){}
+  ~Local_list() {
     for (Local *l : local_list) delete l;
-    delete block;
   }
   void append_local(Local *l) { local_list.push_back(l); }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Local_list(";
+    bool first = true;
+    for (Local *l : local_list) {
+      if (!first) out << ", ";
+      first = false;
+      l->printOn(out);
+    }
+    out << ")";
+  }
+private:
+   std::vector<Local *> local_list;
+};
+
+class Body: public AST{
+public:
+  Body(Local_list *l, Block *b){
+    local_list = l;
+    block = b;
+  }
+  ~Body() {
+    delete local_list;
+    delete block;
+  }
   virtual void sem() override {
     st.openScope();
-    for (Local *l : local_list) l->sem();
+    //for (Local *l : local_list) l->sem();
     block->sem();
     st.closeScope();
   }
@@ -835,16 +986,11 @@ public:
   }
   virtual void printOn(std::ostream &out) const override {
     out << "Body(";
-    bool first = true;
-    for (Local *l : local_list) {
-      if (!first) out << ", ";
-      first = false;
-      l->printOn(out);
-    }
+    if(local_list) local_list->printOn(out);
     if(block) block->printOn(out);
     out << ")";
   }
 private:
-  std::vector<Local *> local_list;
+  Local_list *local_list;
   Block *block;
 };

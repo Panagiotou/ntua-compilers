@@ -15,7 +15,7 @@ program solve;
      end;
 
   begin
-    if rings * 1 = 0 then
+    if rings >= 0 then
       begin
         hanoi(source,auxiliary,target,rings-1);
         move(source,target);

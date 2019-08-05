@@ -70,10 +70,10 @@
 %token T_op_lbr "["
 %token T_op_rbr "]"
 
-%token T_int_const
-%token T_real_const
-%token T_const_char
-%token T_const_string
+%token<num> T_int_const
+%token<re> T_real_const
+%token<var> T_const_char
+%token<sval> T_const_string
 %token<sval> T_id
 
 /*operators*/
@@ -87,6 +87,7 @@
 %union {
   Body *body;
   Local *local;
+  Local_list *local_list;
   Block *block;
   Header *header;
   Label *label;
@@ -97,14 +98,10 @@
   Formal_list *formal_list;
   Stmt *stmt;
   Stmt_list *stmt_list;
-  Constint *constint;
-  Constchar *constchar;
-  Constreal *constreal;
-  Conststring *conststring;
   Expr *expr;
   Expr_list *expr_list;
   Call *call;
-
+  Callr *callr;
 
   Type *type;
   Rval *rval;
@@ -117,9 +114,10 @@
   std::string* sval;
 }
 
-%type<body>  body local_list
+%type<body>  body
 %type<block>  block
 %type<local>  local
+%type<local_list>  local_list
 %type<header>  header
 %type<label>  decl_label
 %type<id_list> id_list
@@ -131,16 +129,13 @@
 %type<stmt_list> stmt_list
 %type<expr_list> expr_list
 %type<call> call
+%type<callr> callr
 
 
 %type<expr>  expr
 %type<type>  type
 %type<rval>  r-value
 %type<lval>  l-value
-%type<constint>    T_int_const
-%type<constchar>    T_const_char
-%type<constreal>    T_real_const
-%type<conststring>    T_const_string
 
 %%
 
@@ -149,17 +144,16 @@ program:
     //$4->sem();
     // std::cout << "AST: " << *$1 << std::endl;
     //$1->run();
+    if(DEBUG) $4->printOn(std::cout);
   }
   ;
 
-body:
-  /*nothing*/ { $$ = new Body(); }
-|local_list block { $1->merge($2); $$ = $1; if(DEBUG) $$->printOn(std::cout); }
+body: local_list block { $$ = new Body($1, $2); if(DEBUG) {std::cout<<"\n"; $$->printOn(std::cout);} }
   ;
 
 local_list:
-  /*nothing*/ { $$ = new Body(); }
-  |local_list local { $1->append_local($2); $$ = $1; if(DEBUG) $$->printOn(std::cout); }
+  /*nothing*/ { $$ = new Local_list(); }
+  |local_list local { $1->append_local($2); $$ = $1; }
   ;
 
 local:
@@ -225,16 +219,16 @@ stmt_list:
 
 stmt:
   /*nothing*/
-  | l-value ":=" expr
-  | expr "^" ":=" expr
+  | l-value ":=" expr { $$ = new Assign($1, $3); /*check if lvalue is result*/}
+  | expr "^" ":=" expr { $$ = new Assign($1, $4); }
   | block { $$ = new Block(); }
   | call { $$ = new Call(); }
   | "if" expr "then" stmt { $$ = new If($2, $4); }
   | "if" expr "then" stmt "else" stmt { $$ = new If($2, $4, $6); }
   | "while" expr "do" stmt { $$ = new While($2, $4); }
-  | T_id ":" stmt
+  | T_id ":" stmt { $$ = new IdLabel($1, $3); }
   | "goto" T_id { $$ = new Goto($2); }
-  | "return"
+  | "return" { $$ = new Return(); }
   | "new" "[" expr "]" l-value { $$ = new New($3, $5); }
   | "new" "[" expr "]" expr "^" { $$ = new New($3, $5); }
   | "new" l-value { $$ = new New($2); }
@@ -251,46 +245,51 @@ expr:
  ;
 
 l-value:
- T_id
- | "result"
- | T_const_string
- | l-value "[" expr "]"
- | "(" l-value ")"
+ T_id { $$ = new Id($1); }
+ | "result" { std::cout<<"1";}
+ | T_const_string { $$ = new Conststring($1); }
+ | l-value "[" expr "]" { $$ = new ArrayItem($1, $3); }
+ | "(" l-value ")" { std::cout<<"1";}
  ;
 
 
 r-value:
- T_int_const
- | "true"
- | "false"
- | T_real_const
- | T_const_char
- | "(" r-value ")"
- | "nil"
- | call
- | "@" l-value
- | "not" expr
- | "+" expr
- | "-" expr
- | expr "+" expr
- | expr "-" expr
- | expr "*" expr
- | expr "/" expr
- | expr "div" expr
- | expr "mod" expr
- | expr "or" expr
- | expr "and" expr
- | expr "=" expr
- | expr "<>" expr
- | expr "<" expr
- | expr "<=" expr
- | expr ">" expr
- | expr ">=" expr
+ T_int_const { $$ = new Constint($1); }
+ | "true" { std::cout<<"1";}
+ | "false" { std::cout<<"1";}
+ | T_real_const { $$ = new Constreal($1); }
+ | T_const_char { $$ = new Constchar($1); }
+ | "(" r-value ")" { std::cout<<"1";}
+ | "nil" { $$ = nullptr; }
+ | callr { $$ = new Callr(); }
+ | "@" l-value { $$ = new Reference($2); }
+ | "not" expr { $$ = new UnOp($1, $2); }
+ | "+" expr { $$ = new UnOp($1, $2); }
+ | "-" expr { $$ = new UnOp($1, $2); }
+ | expr "+" expr { $$ = new BinOp($1, $2, $3); }
+ | expr "-" expr { $$ = new BinOp($1, $2, $3); }
+ | expr "*" expr { $$ = new BinOp($1, $2, $3); }
+ | expr "/" expr { $$ = new BinOp($1, $2, $3); }
+ | expr "div" expr { $$ = new BinOp($1, $2, $3); }
+ | expr "mod" expr { $$ = new BinOp($1, $2, $3); }
+ | expr "or" expr { $$ = new BinOp($1, $2, $3); }
+ | expr "and" expr { $$ = new BinOp($1, $2, $3); }
+ | expr "=" expr { $$ = new BinOp($1, $2, $3); }
+ | expr "<>" expr { $$ = new BinOp($1, $2, $3); }
+ | expr "<" expr { $$ = new BinOp($1, $2, $3); }
+ | expr "<=" expr { $$ = new BinOp($1, $2, $3); }
+ | expr ">" expr { $$ = new BinOp($1, $2, $3); }
+ | expr ">=" expr { $$ = new BinOp($1, $2, $3); }
  ;
 
 call:
   T_id "(" expr  expr_list  ")" { $4->append_expr($3); $$ = new Call($1, $4); }
   |T_id "(" ")" { $$ = new Call($1); }
+  ;
+
+callr:
+  T_id "(" expr  expr_list  ")" { $4->append_expr($3); $$ = new Callr($1, $4); }
+  |T_id "(" ")" { $$ = new Callr($1); }
   ;
 
 expr_list:
