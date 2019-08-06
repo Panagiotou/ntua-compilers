@@ -1,5 +1,6 @@
 #include "../error.h"
 #include "symbol.hpp"
+#include "../lexer/lexer.hpp"
 #include <cstring>
 #include <iostream>
 #include <vector>
@@ -96,7 +97,11 @@ public:
    }
   ~BinOp() { delete left; delete right; }
   virtual void printOn(std::ostream &out) const override {
-    out << op << "(" << *left << ", " << *right << ")";
+    out << "BinOp(";
+    left->printOn(out);
+    out << "op";
+    right->printOn(out);
+    out << ")";
   }
   virtual bool check_number(Expr *left, Expr *right){
     return ((left->type_check(TYPE_REAL) && right->type_check(TYPE_INTEGER))||(left->type_check(TYPE_INTEGER) && right->type_check(TYPE_REAL))||(left->type_check(TYPE_REAL) && right->type_check(TYPE_REAL))||(left->type_check(TYPE_INTEGER) && right->type_check(TYPE_INTEGER)));
@@ -216,7 +221,7 @@ private:
 
 class Id: public Lval {
 public:
-  Id(std::string *v): var(v), offset(-1){ }
+  Id(char* v): var(v), offset(-1){ }
   virtual void printOn(std::ostream &out) const override {
     out << "Id(" << var << "@" << offset << ")";
   }
@@ -229,7 +234,7 @@ public:
     //offset = e->offset;
   }
 private:
-  std::string *var;
+  char* var;
   int offset;
 };
 
@@ -306,7 +311,7 @@ private:
 
 class IdLabel: public Stmt{
 public:
-  IdLabel(std::string* i, Stmt *s){
+  IdLabel(char* i, Stmt *s){
     id = i;
     stmt = s;
   }
@@ -320,7 +325,7 @@ public:
     std::cout << "Running IdLabel";
   }
 private:
-  std::string* id;
+  char* id;
   Stmt *stmt;
 };
 
@@ -371,7 +376,7 @@ public:
     id = nullptr;
     expr_list = nullptr;
   }
-  Call(std::string* i, Expr_list *e = nullptr){
+  Call(char* i, Expr_list *e = nullptr){
     id = i;
     expr_list = e;
   }
@@ -388,7 +393,7 @@ public:
     std::cout << "Running Call";
   }
 private:
-  std::string *id;
+  char* id;
   Expr_list *expr_list;
 };
 
@@ -398,12 +403,12 @@ public:
     id = nullptr;
     expr_list = nullptr;
   }
-  Callr(std::string* i, Expr_list *e = nullptr){
+  Callr(char *i, Expr_list *e = nullptr){
     id = i;
     expr_list = e;
   }
   ~Callr(){
-    delete id; delete expr_list;
+    delete expr_list;
   }
   virtual void printOn(std::ostream &out) const override {
     out << "Callr(";
@@ -412,7 +417,7 @@ public:
     out << ")";
   }
 private:
-  std::string *id;
+  char *id;
   Expr_list *expr_list;
 };
 
@@ -456,7 +461,7 @@ private:
 
 class Goto: public Stmt{
 public:
-  Goto(std::string *i){
+  Goto(char* i){
     id = i;
   }
   virtual void printOn(std::ostream &out) const override {
@@ -468,7 +473,7 @@ public:
     std::cout << "Running Goto";
   }
 private:
-  std::string* id;
+  char* id;
 };
 
 
@@ -549,7 +554,7 @@ public:
   Constint(int c): con(c) {
     type = new Integer();}
   virtual void printOn(std::ostream &out) const override {
-    out << "Const(";
+    out << "Constint(";
     out << con ;
     out << ")";
   }
@@ -611,7 +616,7 @@ public:
   Constchar(char c): con(c) {
     type = new Char();}
   virtual void printOn(std::ostream &out) const override {
-    out << "Const(" << con << ")";
+    out << "Constchar(" << con << ")";
   }
   virtual int eval() const override { return 0; } //wrong
   virtual void sem() override { type = new Char(); }
@@ -625,7 +630,7 @@ public:
   Conststring(std::string *c): con(c) {
     type = new String();}
   virtual void printOn(std::ostream &out) const override {
-    out << "Const(" << con << ")";
+    out << "Conststring(" << con << ")";
   }
   virtual int eval() const override { return 0; } //wrong
   virtual void sem() override { type = new String(); }
@@ -639,7 +644,7 @@ public:
   Constreal(double c): con(c) {
     type = new Real();}
   virtual void printOn(std::ostream &out) const override {
-    out << "Const(" << con << ")";
+    out << "Constreal(" << con << ")";
   }
   virtual int eval() const override { return 0; } //wrong
   virtual void sem() override { type = new Real(); }
@@ -655,7 +660,7 @@ public:
   ~If() { delete cond; delete stmt1; delete stmt2; }
   virtual void printOn(std::ostream &out) const override {
     out << "If(";
-    //if(cond) cond->printOn(out);
+    if(cond) cond->printOn(out);
     if(stmt1) stmt1->printOn(out);
     if (stmt2) stmt2->printOn(out);
     out << ")";
@@ -736,21 +741,21 @@ class Id_list: public AST{
 public:
   Id_list(): id_list(){}
   ~Id_list() {
-    for (std::string* id : id_list) delete id;
+    for (char *id : id_list) delete id;
   }
-  void append_id(std::string* id) { id_list.push_back(id); }
+  void append_id(char* id) { id_list.push_back(id); }
   virtual void printOn(std::ostream &out) const override {
     out << "Id_list(";
     bool first = true;
-    for (std::string* id : id_list) {
+    for (char* id : id_list) {
       if (!first) out << ", ";
       first = false;
-      out << id;
+      if(id) out << id;
     }
     out << ")";
   }
 private:
-   std::vector<std::string* > id_list;
+   std::vector<char* > id_list;
 };
 
 
@@ -852,7 +857,7 @@ private:
 
 class Procedure: public Header{
 public:
-  Procedure(std::string* i, Formal_list *f = nullptr){
+  Procedure(char* i, Formal_list *f = nullptr){
     id = i;
     formal_list = f;
   }
@@ -861,18 +866,18 @@ public:
   }
   virtual void printOn(std::ostream &out) const override {
     out << "Procedure(";
-    out << id;
+    if(id) out << id;
     formal_list->printOn(out);
     out << ")";
   }
 private:
-  std::string* id;
+  char* id;
   Formal_list *formal_list;
 };
 
 class Function: public Header{
 public:
-  Function(std::string* i, Type *t, Formal_list *f = nullptr){
+  Function(char* i, Type *t, Formal_list *f = nullptr){
     id = i;
     type = t;
     formal_list = f;
@@ -888,7 +893,7 @@ public:
     out << ")";
   }
 private:
-  std::string* id;
+  char* id;
   Type *type;
   Formal_list *formal_list;
 };

@@ -2,10 +2,17 @@
   #include <cstdio>
   #include <cstdlib>
   #include <string>
+  #include <vector>
   #include "../semantic/ast.hpp"
   #include "lexer.hpp"
   #include "../parser/parser.hpp"
   #define T_eof  0
+
+  std::vector<char *> ids;
+  std::vector<int> ints;
+  std::vector<double> doubles;
+  std::vector<char> chars;
+  std::vector<std::string> strings;
 %}
 L [A-DF-Za-df-z]
 E [Ee]
@@ -74,7 +81,7 @@ Esc \\[ "t""n""r""0"\'\"\\]
 "[" {return T_op_lbr;}
 "]" {return T_op_rbr;}
 
-({L}|{E})({L}|{E}|{D}|"_")*               { return T_id; }
+({L}|{E})({L}|{E}|{D}|"_")*               { ids.push_back(strdup(yytext)); return T_id; }
 {D}+				                              {return T_int_const;}
 ({D}+("."{D}*({E}("+"|"-")?{D}+)?)?)      {return T_real_const;}
 \'(({Esc})|[^\"\'\\])\'                   {return T_const_char;}        /*'*/
