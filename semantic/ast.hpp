@@ -492,7 +492,7 @@ public:
     for (Stmt *s : stmt_list) {
       if (!first) out << ", ";
       first = false;
-      out << "\n";
+      out << "\n\t";
       s->printOn(out);
     }
     out << "\n)";

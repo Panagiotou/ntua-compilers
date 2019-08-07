@@ -145,7 +145,6 @@ program:
     //$4->sem();
     // std::cout << "AST: " << *$1 << std::endl;
     //$1->run();
-    if(DEBUG) { std::cout << "\n"; std::cout << "\n\n"; $4->printOn(std::cout); }
   }
   ;
 
@@ -222,7 +221,7 @@ stmt:
   /*nothing*/
   | l-value ":=" expr { $$ = new Assign($1, $3); /*check if lvalue is result*/}
   | expr "^" ":=" expr { $$ = new Assign($1, $4); }
-  | block { $$ = new Block(); }
+  | block
   | call
   | "if" expr "then" stmt { $$ = new If($2, $4); }
   | "if" expr "then" stmt "else" stmt { $$ = new If($2, $4, $6); }
