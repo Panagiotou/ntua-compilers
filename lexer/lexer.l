@@ -9,10 +9,12 @@
   #define T_eof  0
 
   std::vector<char *> ids;
-  std::vector<int> ints;
-  std::vector<double> doubles;
-  std::vector<char> chars;
-  std::vector<std::string> strings;
+  std::vector<int> constInts;
+  std::vector<double> constReals;
+  std::vector<char> constChars;
+  std::vector<char *> constStrings;
+  std::vector<char *> operators;
+
 %}
 L [A-DF-Za-df-z]
 E [Ee]
@@ -25,13 +27,13 @@ Esc \\[ "t""n""r""0"\'\"\\]
 
 
 %%
-"and"             {return T_and;}
+"and"             { operators.push_back(strdup(yytext)); return T_and;}
 "array"           {return T_array;}
 "begin"           {return T_begin;}
 "boolean"         {return T_boolean;}
 "char"            {return T_char;}
 "dispose"         {return T_dispose;}
-"div"             {return T_div;}
+"div"             { operators.push_back(strdup(yytext)); return T_div;}
 "do"              {return T_do;}
 "else"            {return T_else;}
 "end"             {return T_end;}
@@ -42,12 +44,12 @@ Esc \\[ "t""n""r""0"\'\"\\]
 "if"              {return T_if;}
 "integer"         {return T_integer;}
 "label"           {return T_label;}
-"mod"             {return T_mod;}
+"mod"             { operators.push_back(strdup(yytext)); return T_mod;}
 "new"             {return T_new;}
 "nil"             {return T_nil;}
-"not"             {return T_not;}
+"not"             { operators.push_back(strdup(yytext)); return T_not;}
 "of"              {return T_of;}
-"or"              {return T_or;}
+"or"              { operators.push_back(strdup(yytext)); return T_or;}
 "procedure"       {return T_procedure;}
 "program"         {return T_program;}
 "real"            {return T_real;}
@@ -58,16 +60,16 @@ Esc \\[ "t""n""r""0"\'\"\\]
 "var"             {return T_var;}
 "while"           {return T_while;}
 
-"=" {return T_op_eq;}
-">" {return T_op_g;}
-"<" {return T_op_l;}
-"<>" {return T_op_neq;}
-"<=" {return T_op_leq;}
-">=" {return T_op_geq;}
-"+" {return T_op_p;}
-"-" {return T_op_m;}
-"*" {return T_op_mul;}
-"/" {return T_op_d;}
+"=" { operators.push_back(strdup(yytext)); return T_op_eq;}
+">" { operators.push_back(strdup(yytext)); return T_op_g;}
+"<" {operators.push_back(strdup(yytext)); return T_op_l;}
+"<>" { operators.push_back(strdup(yytext)); return T_op_neq;}
+"<=" { operators.push_back(strdup(yytext)); return T_op_leq;}
+">=" { operators.push_back(strdup(yytext)); return T_op_geq;}
+"+" { operators.push_back(strdup(yytext)); return T_op_p;}
+"-" { operators.push_back(strdup(yytext)); return T_op_m;}
+"*" { operators.push_back(strdup(yytext)); return T_op_mul;}
+"/" { operators.push_back(strdup(yytext)); return T_op_d;}
 "^" {return T_op_point;}
 "@" {return T_op_addr;}
 
@@ -82,10 +84,10 @@ Esc \\[ "t""n""r""0"\'\"\\]
 "]" {return T_op_rbr;}
 
 ({L}|{E})({L}|{E}|{D}|"_")*               { ids.push_back(strdup(yytext)); return T_id; }
-{D}+				                              {return T_int_const;}
-({D}+("."{D}*({E}("+"|"-")?{D}+)?)?)      {return T_real_const;}
-\'(({Esc})|[^\"\'\\])\'                   {return T_const_char;}        /*'*/
-\"([^\'\"\r\n\\]|({Esc}))*\"              {return T_const_string;}      /*"*/
+{D}+				                              {constInts.push_back(std::stoi(yytext)); return T_int_const;}
+({D}+("."{D}*({E}("+"|"-")?{D}+)?)?)      {constReals.push_back(std::stod(yytext)); return T_real_const;}
+\'(({Esc})|[^\"\'\\])\'                   {constChars.push_back(strdup(yytext)[0]); return T_const_char;}        /*'*/
+\"([^\'\"\r\n\\]|({Esc}))*\"              {constStrings.push_back(strdup(yytext)); return T_const_string;}      /*"*/
 
 \^{L}({L}|_|{D})*               { return T_op_point;}
 @{L}({L}|_|{D})*                { return T_op_addr; }

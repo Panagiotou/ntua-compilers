@@ -99,7 +99,7 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "BinOp(";
     left->printOn(out);
-    out << "op";
+    if(op) out << op;
     right->printOn(out);
     out << ")";
   }
@@ -188,7 +188,10 @@ public:
   UnOp(char *o, Expr *r): op(o), right(r) {}
   ~UnOp() { delete right; }
   virtual void printOn(std::ostream &out) const override {
-    out << op << "(" << *right << ")";
+    out << "UnOp(";
+    if(op) out << op;
+    right->printOn(out);
+    out << ")";
   }
   virtual void sem() override {
     if(! strcmp(op, "+") || ! strcmp(op, "-")){
@@ -317,7 +320,7 @@ public:
   }
   virtual void printOn(std::ostream &out) const override {
     out << "IdLabel(";
-    if(id) out << id;
+    if(id) out << id << " ";
     if(stmt) stmt->printOn(out);
     out << ")";
   }
@@ -343,9 +346,8 @@ public:
   }
   virtual void printOn(std::ostream &out) const override {
     out << "Assign(";
-    if(lval) lval->printOn(out);
-    if(exprPointer) exprPointer->printOn(out);
-    if(exprRight) exprRight->printOn(out);
+    if(lval && exprRight){lval->printOn(out); out << " := "; exprRight->printOn(out);}
+    if(exprPointer && exprRight){ exprPointer->printOn(out); out << " ^ := "; exprRight->printOn(out);}
     out << ")";
   }
   virtual void run() const override {
@@ -385,7 +387,7 @@ public:
   }
   virtual void printOn(std::ostream &out) const override {
     out << "Call(";
-    if(id) out << id;
+    if(id) out << id << " ";
     if(expr_list) expr_list->printOn(out);
     out << ")";
   }
@@ -412,7 +414,7 @@ public:
   }
   virtual void printOn(std::ostream &out) const override {
     out << "Callr(";
-    if(id) out << id;
+    if(id) out << id << " ";
     if(expr_list) expr_list->printOn(out);
     out << ")";
   }
@@ -466,7 +468,7 @@ public:
   }
   virtual void printOn(std::ostream &out) const override {
     out << "Goto(";
-    out << id;
+    out << id << " ";
     out << ")";
   }
   virtual void run() const override {
@@ -485,14 +487,15 @@ public:
   }
   void append_stmt(Stmt *s) { stmt_list.push_back(s); }
   virtual void printOn(std::ostream &out) const override {
-    out << "Stmt_list(";
+    out << "\nStmt_list(";
     bool first = true;
     for (Stmt *s : stmt_list) {
       if (!first) out << ", ";
       first = false;
+      out << "\n";
       s->printOn(out);
     }
-    out << ")";
+    out << "\n)";
   }
 private:
    std::vector<Stmt *> stmt_list;
@@ -627,7 +630,7 @@ private:
 
 class Conststring: public Lval {
 public:
-  Conststring(std::string *c): con(c) {
+  Conststring(char *c): con(c) {
     type = new String();}
   virtual void printOn(std::ostream &out) const override {
     out << "Conststring(" << con << ")";
@@ -636,7 +639,7 @@ public:
   virtual void sem() override { type = new String(); }
   Type *type;
 private:
-  std::string *con;
+  char *con;
 };
 
 class Constreal: public Rval {
@@ -750,7 +753,7 @@ public:
     for (char* id : id_list) {
       if (!first) out << ", ";
       first = false;
-      if(id) out << id;
+      if(id) out << id << " ";
     }
     out << ")";
   }
@@ -866,7 +869,7 @@ public:
   }
   virtual void printOn(std::ostream &out) const override {
     out << "Procedure(";
-    if(id) out << id;
+    if(id) out << id << " ";
     formal_list->printOn(out);
     out << ")";
   }
@@ -887,7 +890,7 @@ public:
   }
   virtual void printOn(std::ostream &out) const override {
     out << "Function(";
-    out << id;
+    out << id << " ";
     formal_list->printOn(out);
     out << type;
     out << ")";

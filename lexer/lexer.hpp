@@ -3,10 +3,11 @@
 #include <vector>
 
 extern std::vector<char *> ids;
-extern std::vector<double> doubles;
-extern std::vector<int> ints;
-extern std::vector<char> chars;
-extern std::vector<std::string> strings;
+extern std::vector<int> constInts;
+extern std::vector<double> constReals;
+extern std::vector<char> constChars;
+extern std::vector<char *> constStrings;
+extern std::vector<char *> operators;
 
 int yylex();
 void yyerror(const char *msg);

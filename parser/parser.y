@@ -248,39 +248,39 @@ expr:
 l-value:
  T_id { $$ = new Id(ids.back()); ids.pop_back(); }
  | "result" { std::cout<<"1";}
- | T_const_string { $$ = new Conststring($1); }
+ | T_const_string { $$ = new Conststring(constStrings.back()); constStrings.pop_back();}
  | l-value "[" expr "]" { $$ = new ArrayItem($1, $3); }
  | "(" l-value ")" { std::cout<<"1";}
  ;
 
 
 r-value:
- T_int_const { $$ = new Constint($1); }
+ T_int_const { $$ = new Constint(constInts.back()); constInts.pop_back(); }
  | "true" { std::cout<<"1";}
  | "false" { std::cout<<"1";}
- | T_real_const { $$ = new Constreal($1); }
- | T_const_char { $$ = new Constchar($1); }
+ | T_real_const { $$ = new Constreal(constReals.back()); constReals.pop_back(); }
+ | T_const_char { $$ = new Constchar(constChars.back()); constChars.pop_back(); }
  | "(" r-value ")" { std::cout<<"1";}
  | "nil" { $$ = nullptr; }
- | callr { $$ = new Callr(); }
+ | callr
  | "@" l-value { $$ = new Reference($2); }
- | "not" expr { $$ = new UnOp($1, $2); }
- | "+" expr { $$ = new UnOp($1, $2); }
- | "-" expr { $$ = new UnOp($1, $2); }
- | expr "+" expr { $$ = new BinOp($1, $2, $3); }
- | expr "-" expr { $$ = new BinOp($1, $2, $3); }
- | expr "*" expr { $$ = new BinOp($1, $2, $3); }
- | expr "/" expr { $$ = new BinOp($1, $2, $3); }
- | expr "div" expr { $$ = new BinOp($1, $2, $3); }
- | expr "mod" expr { $$ = new BinOp($1, $2, $3); }
- | expr "or" expr { $$ = new BinOp($1, $2, $3); }
- | expr "and" expr { $$ = new BinOp($1, $2, $3); }
- | expr "=" expr { $$ = new BinOp($1, $2, $3); }
- | expr "<>" expr { $$ = new BinOp($1, $2, $3); }
- | expr "<" expr { $$ = new BinOp($1, $2, $3); }
- | expr "<=" expr { $$ = new BinOp($1, $2, $3); }
- | expr ">" expr { $$ = new BinOp($1, $2, $3); }
- | expr ">=" expr { $$ = new BinOp($1, $2, $3); }
+ | "not" expr { $$ = new UnOp(operators.back(), $2); operators.pop_back(); }
+ | "+" expr { $$ = new UnOp(operators.back(), $2); operators.pop_back(); }
+ | "-" expr { $$ = new UnOp(operators.back(), $2); operators.pop_back(); }
+ | expr "+" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
+ | expr "-" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
+ | expr "*" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
+ | expr "/" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
+ | expr "div" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
+ | expr "mod" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
+ | expr "or" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
+ | expr "and" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
+ | expr "=" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
+ | expr "<>" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
+ | expr "<" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
+ | expr "<=" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
+ | expr ">" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
+ | expr ">=" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
  ;
 
 call:
@@ -307,7 +307,7 @@ int main() {
   int result = yyparse();
   bool first = true;
   if(DEBUG){
-    std::cout << "\nRemaining ids: ";
+    std::cout << "\n\nRemaining ids: ";
     for (char* id : ids) {
       if (!first) std::cout << ", ";
       first = false;
