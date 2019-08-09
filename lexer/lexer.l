@@ -22,8 +22,11 @@ D [0-9]
 /* escape sequence */
 Esc \\[ "t""n""r""0"\'\"\\]
 
+%x COMMENT
 %option noyywrap
 %option nounput
+
+
 
 
 %%
@@ -100,7 +103,13 @@ Esc \\[ "t""n""r""0"\'\"\\]
 
 
 [ \t\r\n]+                           {/* nothing */}
-"(*"([^*]+[\*+[^*)])*\*"*)"        {/* nothing */}
+
+
+"(*" { BEGIN (COMMENT); }
+<COMMENT>"*)" { BEGIN (INITIAL); }
+<COMMENT>\n { /* new line */ }
+<COMMENT>"*" { /* nothing */ }
+<COMMENT>[^*\n]+ { /* nothing */ }
 
 
 .                                  {yyerror("lexical error");}

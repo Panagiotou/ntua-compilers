@@ -60,6 +60,7 @@ public:
     for (Expr *e : expr_list) delete e;
   }
   void append_expr(Expr *e) { expr_list.push_back(e); }
+  void append_begin(Expr *e) { expr_list.insert(expr_list.begin(), e); }
   virtual void printOn(std::ostream &out) const override {
     out << "Expr_list(";
     bool first = true;
@@ -486,6 +487,7 @@ public:
     for (Stmt *s : stmt_list) delete s;
   }
   void append_stmt(Stmt *s) { stmt_list.push_back(s); }
+  void append_begin(Stmt *s) { stmt_list.insert(stmt_list.begin(), s); }
   virtual void printOn(std::ostream &out) const override {
     out << "\nStmt_list(";
     bool first = true;
@@ -747,6 +749,8 @@ public:
     for (char *id : id_list) delete id;
   }
   void append_id(char* id) { id_list.push_back(id); }
+  void append_begin(char *i) { id_list.insert(id_list.begin(), i); }
+
   virtual void printOn(std::ostream &out) const override {
     out << "Id_list(";
     bool first = true;
@@ -804,6 +808,8 @@ public:
     for (Decl *d : decl_list) delete d;
   }
   void append_decl(Decl *d) { decl_list.push_back(d); }
+  void append_begin(Decl *d) { decl_list.insert(decl_list.begin(), d); }
+
   virtual void printOn(std::ostream &out) const override {
     out << "Decl_list(";
     bool first = true;
@@ -844,6 +850,8 @@ public:
     for (Formal *f : formal_list) delete f;
   }
   void append_formal(Formal *f) { formal_list.push_back(f); }
+  void append_begin(Formal *f) { formal_list.insert(formal_list.begin(), f); }
+
   virtual void printOn(std::ostream &out) const override {
     out << "Formal_list(";
     bool first = true;
@@ -959,6 +967,8 @@ public:
     for (Local *l : local_list) delete l;
   }
   void append_local(Local *l) { local_list.push_back(l); }
+  void append_begin(Local *l) { local_list.insert(local_list.begin(), l); }
+
   virtual void printOn(std::ostream &out) const override {
     out << "Local_list(";
     bool first = true;

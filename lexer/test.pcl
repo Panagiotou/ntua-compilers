@@ -19,7 +19,7 @@ program solve;
       begin
         hanoi(source,auxiliary,target,rings-1);
         move(source,target);
-        hanoi(auxiliary,target,source,rings-1)
+        hanoi(auxiliary1,target,source,rings-1)
       end
   end;
 

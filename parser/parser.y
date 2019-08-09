@@ -165,7 +165,7 @@ local:
  ;
 
 decl_label:
-  T_id id_list ";" { $2->append_id(ids.back()); ids.pop_back(); $$ = new Label($2); }
+  T_id id_list ";" { $2->append_begin(ids.back()); ids.pop_back(); $$ = new Label($2); }
   ;
 
 
@@ -180,12 +180,12 @@ decl_list:
   ;
 
 decl:
-  T_id id_list ":" type ";" { $2->append_id(ids.back()); ids.pop_back();$$ = new Decl($2, $4);}
+  T_id id_list ":" type ";" { $2->append_begin(ids.back()); ids.pop_back();$$ = new Decl($2, $4);}
 
 header:
- "procedure" T_id "(" formal formal_list  ")" { $5->append_formal($4); $$ = new Procedure(ids.back(), $5); ids.pop_back(); }
+ "procedure" T_id "(" formal formal_list  ")" { $5->append_begin($4); $$ = new Procedure(ids.back(), $5); ids.pop_back(); }
  | "procedure" T_id "(" ")" { $$ = new Procedure(ids.back()); ids.pop_back(); }
- | "function" T_id "(" formal formal_list  ")" ":" type { $5->append_formal($4); $$ = new Function(ids.back(), $8, $5); ids.pop_back();}
+ | "function" T_id "(" formal formal_list  ")" ":" type { $5->append_begin($4); $$ = new Function(ids.back(), $8, $5); ids.pop_back();}
  | "function" T_id "(" ")" ":" type { $$ = new Function(ids.back(), $6); ids.pop_back();}
  ;
 
@@ -195,8 +195,8 @@ formal_list:
   ;
 
 formal:
-  "var" T_id  id_list ":" type { $3->append_id(ids.back()); ids.pop_back(); $$ = new Formal($3, $5); }
-  |T_id  id_list ":" type { $2->append_id(ids.back()); ids.pop_back(); $$ = new Formal($2, $4); }
+  "var" T_id  id_list ":" type { $3->append_begin(ids.back()); ids.pop_back(); $$ = new Formal($3, $5); }
+  |T_id  id_list ":" type { $2->append_begin(ids.back()); ids.pop_back(); $$ = new Formal($2, $4); }
   ;
 
 type:
@@ -210,7 +210,7 @@ type:
  ;
 
 block:
-  "begin" stmt stmt_list "end" { $3->append_stmt($2); $$ = new Block($3); }
+  "begin" stmt stmt_list "end" { $3->append_begin($2); $$ = new Block($3); }
   ;
 
 stmt_list:
@@ -284,12 +284,12 @@ r-value:
  ;
 
 call:
-  T_id "(" expr  expr_list  ")" { $4->append_expr($3); $$ = new Call(ids.back(), $4); ids.pop_back(); }
+  T_id "(" expr  expr_list  ")" { $4->append_begin($3); $$ = new Call(ids.back(), $4); ids.pop_back(); }
   |T_id "(" ")" { $$ = new Call(ids.back()); ids.pop_back(); }
   ;
 
 callr:
-  T_id "(" expr  expr_list  ")" { $4->append_expr($3); $$ = new Callr(ids.back(), $4); ids.pop_back();}
+  T_id "(" expr  expr_list  ")" { $4->append_begin($3); $$ = new Callr(ids.back(), $4); ids.pop_back();}
   |T_id "(" ")" { $$ = new Callr(ids.back()); ids.pop_back();}
   ;
 
