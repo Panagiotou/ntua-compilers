@@ -915,7 +915,7 @@ public:
     label = l;
     localType = "label";
   };
-  Local(Header *h, Body *b){
+  Local(Header *h, AST *b){
     // function or procedure
     header = h;
     body = b;
@@ -937,7 +937,7 @@ public:
     }
     else if(localType.compare("forp") == 0){
       header->printOn(out);
-      //body->printOn(out);
+      body->printOn(out);
     }
     else if(localType.compare("forward") == 0){
       header->printOn(out);
@@ -948,7 +948,7 @@ private:
   Decl_list *decl_list;
   Label *label;
   Header *header;
-  Body *body;
+  AST *body;
   std::string localType;
 };
 
@@ -967,7 +967,7 @@ public:
       first = false;
       l->printOn(out);
     }
-    out << ")";
+    out << ")\n";
   }
 private:
    std::vector<Local *> local_list;

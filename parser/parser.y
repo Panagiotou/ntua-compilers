@@ -145,10 +145,11 @@ program:
     //$4->sem();
     // std::cout << "AST: " << *$1 << std::endl;
     //$1->run();
+    $4->printOn(std::cout);
   }
   ;
 
-body: local_list block { $$ = new Body($1, $2); if(DEBUG) {std::cout<<"\n\n"; $$->printOn(std::cout);} }
+body: local_list block { $$ = new Body($1, $2); }
   ;
 
 local_list:
@@ -183,7 +184,7 @@ decl:
 
 header:
  "procedure" T_id "(" formal formal_list  ")" { $5->append_formal($4); $$ = new Procedure(ids.back(), $5); ids.pop_back(); }
- | "procedure" T_id "(" ")" { $$ = new Procedure(ids.back()); ids.pop_back();}
+ | "procedure" T_id "(" ")" { $$ = new Procedure(ids.back()); ids.pop_back(); }
  | "function" T_id "(" formal formal_list  ")" ":" type { $5->append_formal($4); $$ = new Function(ids.back(), $8, $5); ids.pop_back();}
  | "function" T_id "(" ")" ":" type { $$ = new Function(ids.back(), $6); ids.pop_back();}
  ;
