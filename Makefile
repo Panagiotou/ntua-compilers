@@ -15,7 +15,7 @@ lexer/lexer: lexer/lexer.o
 parser/parser.hpp parser/parser.cpp: parser/parser.y
 	bison -dv -o parser/parser.cpp parser/parser.y
 
-parser/parser.o: parser/parser.cpp lexer/lexer.hpp semantic/ast.hpp semantic/symbol.hpp
+parser/parser.o: parser/parser.cpp lexer/lexer.hpp semantic/ast.hpp semantic/symbol.hpp semantic/Type.hpp semantic/AST.hpp
 
 pcl: lexer/lexer.o parser/parser.o
 	$(CXX) $(CXXFLAGS) -o pcl lexer/lexer.o parser/parser.o

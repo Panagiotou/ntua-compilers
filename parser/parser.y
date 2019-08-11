@@ -6,7 +6,7 @@
 
   SymbolTable st;
   std::vector<int> rt_stack;
-  #define DEBUG true
+  #define DEBUG false
 
 %}
 
@@ -142,10 +142,10 @@
 
 program:
   "program" T_id ";" body "."{
-    //$4->sem();
+    $4->sem();
     // std::cout << "AST: " << *$1 << std::endl;
     //$1->run();
-    $4->printOn(std::cout);
+    if(DEBUG) $4->printOn(std::cout);
   }
   ;
 
@@ -247,20 +247,20 @@ expr:
 
 l-value:
  T_id { $$ = new Id(ids.back()); ids.pop_back(); }
- | "result" { std::cout<<"1";}
+ | "result"
  | T_const_string { $$ = new Conststring(constStrings.back()); constStrings.pop_back();}
  | l-value "[" expr "]" { $$ = new ArrayItem($1, $3); }
- | "(" l-value ")" { std::cout<<"1";}
+ | "(" l-value ")"
  ;
 
 
 r-value:
  T_int_const { $$ = new Constint(constInts.back()); constInts.pop_back(); }
- | "true" { std::cout<<"1";}
- | "false" { std::cout<<"1";}
+ | "true"
+ | "false"
  | T_real_const { $$ = new Constreal(constReals.back()); constReals.pop_back(); }
  | T_const_char { $$ = new Constchar(constChars.back()); constChars.pop_back(); }
- | "(" r-value ")" { std::cout<<"1";}
+ | "(" r-value ")"
  | "nil" { $$ = nullptr; }
  | callr
  | "@" l-value { $$ = new Reference($2); }
