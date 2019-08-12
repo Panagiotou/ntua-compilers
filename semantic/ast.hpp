@@ -17,6 +17,7 @@ inline std::ostream& operator<<(std::ostream &out, Types t) {
   case TYPE_CHAR: out << "char"; break;
   case TYPE_STRING: out << "string"; break;
   case TYPE_POINTER: out << "pointer"; break;
+  case TYPE_PROCEDURE: out << "type procedure"; break;
   }
   return out;
 }
@@ -33,16 +34,19 @@ inline std::ostream& operator<<(std::ostream &out, const AST &t) {
 class Expr: public AST {
 public:
   virtual int eval() const = 0;
-  bool type_check(Types t) {
+  bool type_check(Type *t) {
 
-    if (type != t) {
-      return 0;
-    }
-    else{
+    if (type == t) {
       return 1;
     }
+    else{
+      return 0;
+    }
   }
-  Types type;
+  Type *getType(){
+    return type;
+  }
+  Type *type;
 };
 
 class Expr_list: public AST{
@@ -62,6 +66,9 @@ public:
       e->printOn(out);
     }
     out << ")";
+  }
+  std::vector<Expr *> getList(){
+    return expr_list;
   }
   virtual void sem() override{
     for (Expr *e : expr_list) e->sem();
@@ -100,60 +107,61 @@ public:
     out << ")";
   }
   virtual bool check_number(Expr *left, Expr *right){
-    return ((left->type_check(TYPE_REAL) && right->type_check(TYPE_INTEGER))||(left->type_check(TYPE_INTEGER) && right->type_check(TYPE_REAL))||(left->type_check(TYPE_REAL) && right->type_check(TYPE_REAL))||(left->type_check(TYPE_INTEGER) && right->type_check(TYPE_INTEGER)));
+
+    return ((left->type->val == TYPE_REAL) && (right->type->val == TYPE_INTEGER))||((left->type->val ==TYPE_INTEGER) && (right->type->val ==TYPE_REAL))||((left->type->val ==TYPE_REAL) && (right->type->val == TYPE_REAL))||((left->type->val == TYPE_INTEGER) && (right->type->val == TYPE_INTEGER));
   }
   virtual void sem() override {
     left->sem();
     right->sem();
     if(! strcmp(op, "+") || ! strcmp(op, "*") || ! strcmp(op, "-")){
-      if( left->type_check(TYPE_INTEGER) && right->type_check(TYPE_INTEGER)){
-        type = TYPE_INTEGER;
+      if( left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
+        type = new Integer();
       }
-      else if(left->type_check(TYPE_REAL) || right->type_check(TYPE_REAL)){
-        type = TYPE_REAL;
+      else if(left->type->val == TYPE_REAL || right->type->val == TYPE_REAL){
+        type = new Real();
       }
       else{
-        ERROR("Type mismatch!\n"); std::cout << left->type << op << right->type << "\n"; printOn(std::cout); exit(1);
+        ERROR("Type mismatch!\n"); std::cout << left->type->val << op << right->type->val << "\n"; printOn(std::cout); exit(1);
       }
     }
     if(! strcmp(op, "/")){
       if(check_number(left, right)){
-        type = TYPE_REAL;
+        type = new Real();
       }
       else{
-        ERROR("Type mismatch!\n"); std::cout << left->type << op << right->type << "\n"; printOn(std::cout); exit(1);
+        ERROR("Type mismatch!\n"); std::cout << left->type->val << op << right->type->val << "\n"; printOn(std::cout); exit(1);
       }
     }
     if(! strcmp(op, "mod") || ! strcmp(op, "div")){
-      if( left->type_check(TYPE_INTEGER) && right->type_check(TYPE_INTEGER)){
-        type = TYPE_INTEGER;
+      if( left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
+        type = new Integer();
       }
       else{
-        ERROR("Type mismatch!\n"); std::cout << left->type << op << right->type << "\n"; printOn(std::cout); exit(1);
+        ERROR("Type mismatch!\n"); std::cout << left->type->val << op << right->type->val << "\n"; printOn(std::cout); exit(1);
       }
     }
     if(! strcmp(op, "=") || ! strcmp(op, "<>")){
-      if(check_number(left, right) || ((left->type == right->type) && (!left->type_check(TYPE_ARRAY) || !left->type_check(TYPE_IARRAY)))){
-        type = TYPE_BOOLEAN;
+      if(check_number(left, right) || ((left->type->val == right->type->val) && (left->type->val != TYPE_ARRAY || left->type->val != TYPE_IARRAY))){
+        type = new Boolean();
       }
       else{
-        ERROR("Type mismatch!\n"); std::cout << left->type << op << right->type << "\n"; printOn(std::cout); exit(1);
+        ERROR("Type mismatch!\n"); std::cout << left->type->val << op << right->type->val << "\n"; printOn(std::cout); exit(1);
       }
     }
     if(! strcmp(op, "<") || ! strcmp(op, ">") || ! strcmp(op, "<=") || ! strcmp(op, ">=")){
       if(check_number(left, right)){
-        type = TYPE_BOOLEAN;
+        type = new Boolean();
       }
       else{
-        ERROR("Type mismatch!\n"); std::cout << left->type << op << right->type << "\n"; printOn(std::cout); exit(1);
+        ERROR("Type mismatch!\n"); std::cout << left->type->val << op << right->type->val << "\n"; printOn(std::cout); exit(1);
       }
     }
     if(! strcmp(op, "or") || ! strcmp(op, "and")){
-      if(left->type_check(TYPE_BOOLEAN) && right->type_check(TYPE_BOOLEAN)){
-        type = TYPE_BOOLEAN;
+      if(left->type->val == TYPE_BOOLEAN && right->type->val == TYPE_BOOLEAN){
+        type = new Boolean();
       }
       else{
-        ERROR("Type mismatch!\n"); std::cout << left->type << op << right->type << "\n"; printOn(std::cout); exit(1);
+        ERROR("Type mismatch!\n"); std::cout << left->type->val << op << right->type->val << "\n"; printOn(std::cout); exit(1);
       }
     }
   }
@@ -194,19 +202,19 @@ public:
   virtual void sem() override {
     right->sem();
     if(! strcmp(op, "+") || ! strcmp(op, "-")){
-      if(right->type_check(TYPE_INTEGER) || right->type_check(TYPE_REAL)){
+      if(right->type->val == TYPE_INTEGER || right->type->val == TYPE_REAL){
         type = right->type;
       }
       else{
-        ERROR("Type mismatch!\n"); std::cout << op << right->type << "\n"; exit(1);
+        ERROR("Type mismatch!\n"); std::cout << op << right->type->val << "\n"; exit(1);
       }
     }
     if( ! strcmp(op, "not")){
-      if(right->type_check(TYPE_BOOLEAN)){
-        type = TYPE_BOOLEAN;
+      if(right->type->val == TYPE_BOOLEAN){
+        type = new Boolean();
       }
       else{
-        ERROR("Type mismatch!\n"); std::cout << op << right->type << "\n"; exit(1);
+        ERROR("Type mismatch!\n"); std::cout << op << right->type->val << "\n"; exit(1);
       }
     }
   }
@@ -235,7 +243,7 @@ public:
     // Types type = e->type;
     // offset = e->offset;
     std::string s = var;
-    type = st.lookup(s)->type->val;
+    type = st.lookup(s)->type;
   }
 private:
   char* var;
@@ -386,6 +394,110 @@ public:
 private:
 };
 
+class Id;
+
+class Id_list: public AST{
+public:
+  Id_list(): id_list(){}
+  ~Id_list() {
+    for (char *id : id_list) delete id;
+  }
+  void append_id(char* id) { id_list.push_back(id); }
+  void append_begin(char *i) { id_list.insert(id_list.begin(), i); }
+
+  virtual void printOn(std::ostream &out) const override {
+    out << "Id_list(";
+    bool first = true;
+    for (char* id : id_list) {
+      if (!first) out << ", ";
+      first = false;
+      if(id) out << id << " ";
+    }
+    out << ")";
+  }
+  std::vector<char* > getlist(){
+    return id_list;
+  }
+  int length(){
+    return id_list.size();
+  }
+  std::vector<char* > charList(){
+    return id_list;
+  }
+private:
+   std::vector<char* > id_list;
+};
+
+class Formal: public AST {
+public:
+  Formal(Id_list *i_list, Type *t){
+    id_list = i_list;
+    type = t;
+  }
+
+  virtual void printOn(std::ostream &out) const override {
+    out << "Formal(";
+    id_list->printOn(out);
+    type->printOn(out);
+    out << ")";
+ }
+ virtual void sem() override{
+   for (char *id : id_list->getlist()) {
+     std::string var = id;
+
+     st.insert(var, type);
+   }
+ }
+ virtual void sem_() override{
+   for (char *id : id_list->getlist()) {
+     std::string var = id;
+     var = "_" + var;
+     st.insert(var, type);
+   }
+ }
+ Type *getType(){
+   return type;
+ }
+ std::vector<char* > getIdList(){
+   return id_list->charList();
+ }
+private:
+  Id_list *id_list;
+  Type *type;
+};
+
+class Formal_list: public AST{
+public:
+  Formal_list(): formal_list(){}
+  ~Formal_list() {
+    for (Formal *f : formal_list) delete f;
+  }
+  void append_formal(Formal *f) { formal_list.push_back(f); }
+  void append_begin(Formal *f) { formal_list.insert(formal_list.begin(), f); }
+
+  virtual void printOn(std::ostream &out) const override {
+    out << "Formal_list(";
+    bool first = true;
+    for (Formal *f : formal_list) {
+      if (!first) out << ", ";
+      first = false;
+      f->printOn(out);
+    }
+    out << ")";
+  }
+  std::vector<Formal *> getList(){
+    return formal_list;
+  }
+  virtual void sem() {
+    for (Formal *f : formal_list) f->sem();
+  }
+  virtual void sem_() {
+    for (Formal *f : formal_list) f->sem_();
+  }
+private:
+   std::vector<Formal *> formal_list;
+};
+
 class Call: public Stmt{
 public:
   Call(){
@@ -408,6 +520,86 @@ public:
   virtual void run() const override {
     std::cout << "Running Call";
   }
+  virtual void sem() override {
+    std::string s = id;
+    expr_list->sem();
+    SymbolEntry *se;
+    se = st.lookup(s);
+    s = se->s;
+    if(st.isProcedure(s)){
+      std::vector<Formal *> formal_list;
+      formal_list = st.getFormalsProcedure(s)->getList();
+      int i = 0;
+      int argumentsExpected = 0;
+      int argumentsProvided = 0;
+      for (Formal *f : formal_list) {
+        int FormalTimes;
+        FormalTimes = f->getIdList().size();
+        argumentsExpected += FormalTimes;
+      }
+      argumentsProvided = expr_list->getList().size();
+      if(argumentsExpected != argumentsProvided){
+        std::cout << "Procedure " << s << " expected " << argumentsExpected << " arguments " << " got " << argumentsProvided;
+        exit(1);
+      }
+      for (Formal *f : formal_list) {
+        int FormalTimes;
+        FormalTimes = f->getIdList().size();
+        for (int j=0; j<FormalTimes; j++){
+          if(!(*f->getType() == *expr_list->getList().at(i)->getType())){
+            ERROR("Type mismatch on procedure arguments!\n");
+            std::cout << "In procedure "<< s << " arguments:\n";
+            std::cout << f->getIdList().at(j);
+            std::cout << "\n and \n";
+            expr_list->getList().at(i)->printOn(std::cout);
+            std::cout << "\nHave different types of ";
+            f->getType()->printOn(std::cout);
+            std::cout << " and ";
+            expr_list->getList().at(i)->getType()->printOn(std::cout);
+            exit(1);
+          }
+          i += 1;
+        }
+      }
+    }
+    else if(st.isFunction(s)){
+      std::vector<Formal *> formal_list;
+      formal_list = st.getFormalsFunction(s)->getList();
+      int i = 0;
+      int argumentsExpected = 0;
+      int argumentsProvided = 0;
+      for (Formal *f : formal_list) {
+        int FormalTimes;
+        FormalTimes = f->getIdList().size();
+        argumentsExpected += FormalTimes;
+      }
+      argumentsProvided = expr_list->getList().size();
+      if(argumentsExpected != argumentsProvided){
+        std::cout << "Procedure " << s << " expected " << argumentsExpected << " arguments " << " got " << argumentsProvided;
+        exit(1);
+      }
+      for (Formal *f : formal_list) {
+        int FormalTimes;
+        FormalTimes = f->getIdList().size();
+        for (int j=0; j<FormalTimes; j++){
+          if(!(*f->getType() == *expr_list->getList().at(i)->getType())){
+            ERROR("Type mismatch on function arguments!\n");
+            std::cout << "In function "<< s << " arguments:\n";
+            std::cout << f->getIdList().at(j);
+            std::cout << "\n and \n";
+            expr_list->getList().at(i)->printOn(std::cout);
+            std::cout << "\nHave different types of ";
+            f->getType()->printOn(std::cout);
+            std::cout << " and ";
+            expr_list->getList().at(i)->getType()->printOn(std::cout);
+            exit(1);
+          }
+          i += 1;
+        }
+      }
+    }
+  }
+
 private:
   char* id;
   Expr_list *expr_list;
@@ -523,7 +715,7 @@ private:
 class Constint: public Rval {
 public:
   Constint(int c): con(c) {
-    type = TYPE_INTEGER;
+    type = new Integer();
   }
   virtual void printOn(std::ostream &out) const override {
     out << "Constint(";
@@ -532,7 +724,6 @@ public:
   }
   virtual int eval() const override { return con; }
   // virtual void sem() override { type = new Integer(); }
-  Types type;
   virtual int get(){
     return con;
   }
@@ -545,13 +736,12 @@ private:
 class Constchar: public Rval {
 public:
   Constchar(char c): con(c) {
-    type = TYPE_CHAR;}
+    type = new Char();}
   virtual void printOn(std::ostream &out) const override {
     out << "Constchar(" << con << ")";
   }
   virtual int eval() const override { return 0; } //wrong
   // virtual void sem() override { type = new Char(); }
-  Types type;
 private:
   char con;
 };
@@ -559,13 +749,12 @@ private:
 class Conststring: public Lval {
 public:
   Conststring(char *c): con(c) {
-    type = TYPE_STRING;}
+    type = new Array(new Char());}
   virtual void printOn(std::ostream &out) const override {
     out << "Conststring(" << con << ")";
   }
   virtual int eval() const override { return 0; } //wrong
   // virtual void sem() override { type = new String(); }
-  Types type;
 private:
   char *con;
 };
@@ -573,13 +762,12 @@ private:
 class Constreal: public Rval {
 public:
   Constreal(double c): con(c) {
-    type = TYPE_REAL;}
+    type = new Real();}
   virtual void printOn(std::ostream &out) const override {
     out << "Constreal(" << con << ")";
   }
   virtual int eval() const override { return 0; } //wrong
   // virtual void sem() override { type = new Real(); }
-  Types type;
 private:
   double con;
 };
@@ -598,7 +786,7 @@ public:
   }
   virtual void sem() override {
     cond->sem();
-    if(cond->type_check(TYPE_BOOLEAN)){
+    if(cond->type->val == TYPE_BOOLEAN){
       stmt1->sem();
       if (stmt2 != nullptr) stmt2->sem();
     }
@@ -627,7 +815,7 @@ public:
   }
   virtual void sem() override {
     expr->sem();
-    if(expr->type_check(TYPE_BOOLEAN)){
+    if(expr->type->val == TYPE_BOOLEAN){
       stmt->sem();
     }
     else{
@@ -669,35 +857,11 @@ private:
 };
 
 class Header: public AST{
-};
-
-class Id;
-
-class Id_list: public AST{
 public:
-  Id_list(): id_list(){}
-  ~Id_list() {
-    for (char *id : id_list) delete id;
-  }
-  void append_id(char* id) { id_list.push_back(id); }
-  void append_begin(char *i) { id_list.insert(id_list.begin(), i); }
-
-  virtual void printOn(std::ostream &out) const override {
-    out << "Id_list(";
-    bool first = true;
-    for (char* id : id_list) {
-      if (!first) out << ", ";
-      first = false;
-      if(id) out << id << " ";
-    }
-    out << ")";
-  }
-  std::vector<char* > getlist(){
-    return id_list;
-  }
-private:
-   std::vector<char* > id_list;
+  virtual char *getFunctionName(){return nullptr;};
 };
+
+
 
 
 class Label: public AST{
@@ -771,55 +935,7 @@ private:
 };
 
 
-class Formal: public AST {
-public:
-  Formal(Id_list *i_list, Type *t){
-    id_list = i_list;
-    type = t;
-  }
 
-  virtual void printOn(std::ostream &out) const override {
-    out << "Formal(";
-    id_list->printOn(out);
-    type->printOn(out);
-    out << ")";
- }
- virtual void sem() override{
-   for (char *id : id_list->getlist()) {
-     std::string var = id;
-     st.insert(var, type);
-   }
- }
-private:
-  Id_list *id_list;
-  Type *type;
-};
-
-class Formal_list: public AST{
-public:
-  Formal_list(): formal_list(){}
-  ~Formal_list() {
-    for (Formal *f : formal_list) delete f;
-  }
-  void append_formal(Formal *f) { formal_list.push_back(f); }
-  void append_begin(Formal *f) { formal_list.insert(formal_list.begin(), f); }
-
-  virtual void printOn(std::ostream &out) const override {
-    out << "Formal_list(";
-    bool first = true;
-    for (Formal *f : formal_list) {
-      if (!first) out << ", ";
-      first = false;
-      f->printOn(out);
-    }
-    out << ")";
-  }
-  virtual void sem() {
-    for (Formal *f : formal_list) f->sem();
-  }
-private:
-   std::vector<Formal *> formal_list;
-};
 
 class Procedure: public Header{
 public:
@@ -837,8 +953,15 @@ public:
     out << ")";
   }
   virtual void sem() override {
-    std::cout << "Check if other procedure with same name exists\n";
+    std::string s = id;
+    st.insertProcedure(s, new ProcedureType(), formal_list);
     formal_list->sem();
+  }
+  virtual void sem_() override {
+    std::string s = id;
+    s = "_" + s;
+    st.insertProcedure(s, new ProcedureType(), formal_list);
+    formal_list->sem_();
   }
 private:
   char* id;
@@ -859,13 +982,22 @@ public:
     out << "Function(";
     out << id << " ";
     formal_list->printOn(out);
-    out << type;
+    type->printOn(out);
     out << ")";
   }
   virtual void sem() override {
-    std::cout << "Check if other function with same name exists";
-    std::cout << "Check function Type";
+    std::string s = id;
+    st.insertFunction(s, type, formal_list);
     formal_list->sem();
+  }
+  virtual void sem_() override {
+    std::string s = id;
+    s = "_" + s;
+    st.insertFunction(s, type, formal_list);
+    formal_list->sem_();
+  }
+  virtual char *getFunctionName () override{
+    return id;
   }
 private:
   char* id;
@@ -925,11 +1057,14 @@ public:
     }
     else if(localType.compare("forp") == 0){
       header->sem();
-      body->sem();
+      body->semPorF(header, header->getFunctionName());
     }
     else if(localType.compare("forward") == 0){
       header->sem();
     }
+  }
+  char *getFunctionName(){
+    return header->getFunctionName();
   }
 private:
   Decl_list *decl_list;
@@ -979,6 +1114,17 @@ public:
     st.openScope();
     local_list->sem();
     block->sem();
+    st.closeScope();
+  }
+  void semPorF( AST *h, char *funName = nullptr) override {
+    st.openScope();
+    h->sem_();
+    local_list->sem();
+    block->sem();
+    if(st.existsResult() && funName){
+        std::cout << "Function " << funName << " does not return\n";
+        exit(1);
+    }
     st.closeScope();
   }
   void merge(Block *b) {

@@ -1,6 +1,6 @@
 #include "AST.hpp"
 
-enum Types { TYPE_INTEGER, TYPE_BOOLEAN, TYPE_REAL, TYPE_ARRAY, TYPE_IARRAY, TYPE_CHAR, TYPE_STRING, TYPE_POINTER};
+enum Types { TYPE_INTEGER, TYPE_BOOLEAN, TYPE_REAL, TYPE_ARRAY, TYPE_IARRAY, TYPE_CHAR, TYPE_STRING, TYPE_POINTER, TYPE_PROCEDURE};
 
 
 class Type: public AST{
@@ -28,19 +28,7 @@ public:
     return false;
   }
 };
-class String: public Type{
-public:
-  String(){ val = TYPE_STRING; oftype = nullptr; size = -1;}
-  virtual void printOn(std::ostream &out) const override {
-    out << "String()";
-  }
-  virtual bool operator==(const Type &that) const override {
-    if(that.val == TYPE_STRING){
-      return true;
-    }
-    return false;
-  }
-};
+
 class Char: public Type{
 public:
   Char(){ val = TYPE_CHAR; oftype = nullptr; size = -1;}
@@ -84,6 +72,15 @@ public:
 
 };
 
+class ProcedureType: public Type{
+public:
+  ProcedureType(){ val = TYPE_PROCEDURE; oftype = nullptr; size = -1;}
+  virtual void printOn(std::ostream &out) const override {
+    out << "ProcedureType()";
+  }
+
+};
+
 class Array: public Type{
 public:
   Array(Type *t, int s = -1){
@@ -108,11 +105,14 @@ public:
   virtual bool operator==(const Type &that) const override {
     if(that.val == TYPE_ARRAY){
       if(size > 0){
-        if(oftype == that.oftype && size == that.size ) return true;
+        if(*oftype == *that.oftype && size == that.size ) return true;
       }
       else{
-        if(oftype == that.oftype) return true;
+        if(*oftype == *that.oftype) return true;
       }
+    }
+    else if(that.val == TYPE_STRING){
+      return true;
     }
     return false;
   }
@@ -132,7 +132,7 @@ public:
   }
   virtual bool operator==(const Type &that) const override {
     if(that.val == TYPE_POINTER){
-      if(oftype == that.oftype) return true;
+      if(*oftype == *that.oftype) return true;
     }
     return false;
   }
