@@ -256,12 +256,12 @@ l-value:
 
 r-value:
  T_int_const { $$ = new Constint(constInts.back()); constInts.pop_back(); }
- | "true"
- | "false"
+ | "true" { $$ = new Constboolean("true"); }
+ | "false" { $$ = new Constboolean("false"); }
  | T_real_const { $$ = new Constreal(constReals.back()); constReals.pop_back(); }
  | T_const_char { $$ = new Constchar(constChars.back()); constChars.pop_back(); }
  | "(" r-value ")"
- | "nil" { $$ = nullptr; }
+ | "nil" { $$ = new Nil(); }
  | callr
  | "@" l-value { $$ = new Reference($2); }
  | "not" expr { $$ = new UnOp(operators.back(), $2); operators.pop_back(); }

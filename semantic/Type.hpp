@@ -1,6 +1,6 @@
 #include "AST.hpp"
 
-enum Types { TYPE_INTEGER, TYPE_BOOLEAN, TYPE_REAL, TYPE_ARRAY, TYPE_IARRAY, TYPE_CHAR, TYPE_STRING, TYPE_POINTER, TYPE_PROCEDURE};
+enum Types { TYPE_INTEGER, TYPE_BOOLEAN, TYPE_REAL, TYPE_ARRAY, TYPE_IARRAY, TYPE_CHAR, TYPE_STRING, TYPE_POINTER, TYPE_PROCEDURE, TYPE_NIL };
 
 
 class Type: public AST{
@@ -12,6 +12,24 @@ public:
   Types val;
   Type *oftype;
   int size;
+};
+
+class TypeNil: public Type{
+public:
+  TypeNil(){
+    val = TYPE_NIL;
+    oftype = nullptr;
+    size = -1;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Nil()";
+  }
+  virtual bool operator==(const Type &that) const override {
+    if(that.val == TYPE_NIL || that.val == TYPE_POINTER){
+      return true;
+    }
+    return false;
+  }
 };
 
 
@@ -131,6 +149,9 @@ public:
     out << ")";
   }
   virtual bool operator==(const Type &that) const override {
+    if(that.val == TYPE_NIL){
+      return true;
+    }
     if(that.val == TYPE_POINTER){
       if(*oftype == *that.oftype) return true;
     }

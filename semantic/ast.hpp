@@ -18,6 +18,7 @@ inline std::ostream& operator<<(std::ostream &out, Types t) {
   case TYPE_STRING: out << "string"; break;
   case TYPE_POINTER: out << "pointer"; break;
   case TYPE_PROCEDURE: out << "type procedure"; break;
+  case TYPE_NIL: out << "nil"; break;
   }
   return out;
 }
@@ -47,6 +48,9 @@ public:
     return type;
   }
   Type *type;
+  virtual bool isResult(){
+      return false;
+  }
 };
 
 class Expr_list: public AST{
@@ -91,9 +95,6 @@ public:
   virtual int eval() const override {
     std::cout << "Evaluating Lval";
     return -1;
-  }
-  virtual bool isResult(){
-      return false;
   }
 };
 
@@ -305,6 +306,10 @@ public:
     std::cout << "Evaluating Reference";
     return -1;
   }
+  virtual void sem() override{
+      lval->sem();
+      type = new Pointer(lval->type);
+  }
 private:
   Lval *lval;
 };
@@ -383,37 +388,86 @@ public:
     std::cout << "Running Assign";
   }
   virtual void sem() override{
-    if(lval->isResult()){
+    if(lval && exprRight){
       lval->sem();
       exprRight->sem();
-      st.insert("result", exprRight->type);
-      std::string funName;
-      Type *funType;
-      funName  = st.getParentFunction();
-      funType = st.lookup(funName)->type;
-      Type *resultType = exprRight->type;
-      if(!(*resultType == *funType)){
-        std::cout << "Function " << funName.erase(0, 1) << " is of type ";
-        funType->printOn(std::cout);
-        std::cout << " but returns type ";
-        resultType->printOn(std::cout);
-        std::cout << "\n";
-        exit(1);
+      if(lval->isResult()){
+        //result
+        st.insert("result", exprRight->type);
+        std::string funName;
+        Type *funType;
+        funName  = st.getParentFunction();
+        funType = st.lookup(funName)->type;
+        Type *resultType = exprRight->type;
+        if(!(*resultType == *funType)){
+          std::cout << "Function " << funName.erase(0, 1) << " is of type ";
+          funType->printOn(std::cout);
+          std::cout << " but returns type ";
+          resultType->printOn(std::cout);
+          std::cout << "\n";
+          exit(1);
+        }
       }
-    }
-    else if(lval && exprRight){
-      lval->sem();
-      exprRight->sem();
-      exprRight->printOn(std::cout);
-      if(lval->type != exprRight->type){
-        std::cout << "Assign Type missmatch!"; exit(1);
+      else{
+        // not result
+        if(!(*lval->type == *exprRight->type)){
+          std::cout << "Assign Type missmatch!";
+          printOn(std::cout);
+          std::cout << "\n";
+          exit(1);
+        }
       }
     }
     else if(exprPointer && exprRight){
+      // exprPointer ^ := exprRight
       exprPointer->sem();
       exprRight->sem();
-      if(exprPointer->type != exprRight->type){
-        std::cout << "Assign Type missmatch!"; exit(1);
+      if(exprRight->type->val == TYPE_NIL){
+        printOn(std::cout);
+        std::cout << "\nnil cant be dereferenced\n";
+        exit(1);
+      }
+      if(exprPointer->isResult()){
+        //result
+        if(!(exprRight->type->val == TYPE_POINTER )){
+          std::cout << "Assign Type missmatch!\n";
+          std::cout << "Expression: ";
+          exprRight->printOn(std::cout);
+          std::cout << " must be a Pointer to some type\n";
+          exit(1);
+        }
+        st.insert("result", exprRight->type->oftype);
+        std::string funName;
+        Type *funType;
+        funName  = st.getParentFunction();
+        funType = st.lookup(funName)->type;
+        Type *resultType = exprRight->type->oftype;
+        if(!(*resultType == *funType)){
+          std::cout << "Function " << funName.erase(0, 1) << " is of type ";
+          funType->printOn(std::cout);
+          std::cout << " but returns type ";
+          resultType->printOn(std::cout);
+          std::cout << "\n";
+          exit(1);
+        }
+      }
+      else{
+        // not result
+        if(!(exprRight->type->val == TYPE_POINTER )){
+          std::cout << "Assign Type missmatch!\n";
+          std::cout << "Expression: ";
+          exprRight->printOn(std::cout);
+          std::cout << " must be a Pointer to some type\n";
+          exit(1);
+        }
+        else{
+          if(!(*exprPointer->type == *exprRight->type->oftype)){
+            std::cout << "Assign Type missmatch!\n";
+            printOn(std::cout);
+            std::cout << "\n";
+            exit(1);
+          }
+        }
       }
     }
   }
@@ -892,6 +946,45 @@ public:
   // virtual void sem() override { type = new Real(); }
 private:
   double con;
+};
+
+class Constboolean: public Rval {
+public:
+  Constboolean(std::string b){
+    if(b.compare("true")){
+      con = true;
+    }
+    else{
+      con = false;
+    }
+    type = new Boolean();
+  }
+  Constboolean(bool b){
+    con = b;
+    type = new Boolean();
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Constboolean(" << con << ")";
+  }
+  virtual int eval() const override { return 0; } //wrong
+  // virtual void sem() override { type = new Boolean(); }
+private:
+  bool con;
+};
+
+class Nil: public Rval {
+public:
+  Nil(){
+    con = nullptr;
+    type = new TypeNil();
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Nil()";
+  }
+  virtual int eval() const override { return 0; } //wrong
+  // virtual void sem() override { type = new Real(); }
+private:
+  char *con;
 };
 
 class If: public Stmt {

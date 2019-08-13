@@ -5,7 +5,7 @@ program solve;
   function hanoi (var source, target, auxiliary : array of char;
                        rings : integer) : integer;
 
-     function hanoi (var source, target : array of char):array of char;
+     function hanoi (var source, target : array of char):boolean;
      begin
       (*
       writeString("Move from ");
@@ -14,15 +14,15 @@ program solve;
       writeString(target);
       writeString(".\n")
       *)
-      result := "sdc"
+      result := true
      end;
 
   begin
-    if rings >= 1 then
+    if 2 >= 1 then
       begin
         hanoi(source,target);
       end;
-    result := hanoi(source,target)
+    result ^:= nil
   end;
 
 begin
