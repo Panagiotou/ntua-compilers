@@ -219,8 +219,8 @@ stmt_list:
   ;
 
 stmt:
-  /*nothing*/
-  | l-value ":=" expr { $$ = new Assign($1, $3); /*check if lvalue is result*/}
+  /*nothing*/ { $$ = nullptr;}
+  | l-value ":=" expr { $$ = new Assign($1, $3); /*check if lvalue is result*/ }
   | expr "^" ":=" expr { $$ = new Assign($1, $4); }
   | block
   | call
@@ -247,7 +247,7 @@ expr:
 
 l-value:
  T_id { $$ = new Id(ids.back()); ids.pop_back(); }
- | "result"
+ | "result" { $$ = new Result(); }
  | T_const_string { $$ = new Conststring(constStrings.back()); constStrings.pop_back();}
  | l-value "[" expr "]" { $$ = new ArrayItem($1, $3); }
  | "(" l-value ")"

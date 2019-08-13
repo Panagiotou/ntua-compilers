@@ -82,6 +82,17 @@ public:
       }
     }
   }
+  std::string getParentFunction(){
+    for(auto it = locals.cbegin(); it != locals.cend(); ++it){
+      if(isFunction(it->first)){
+        if (it->first.find("_") == 0){
+          return it->first;
+        }
+      }
+    }
+    std::cout << "Cant find parrent function!";
+    exit(1);
+  }
 private:
   std::map<std::string , SymbolEntry> locals;
   std::map<std::string , bool> procedures;
@@ -140,6 +151,11 @@ public:
   }
   void insertFunction(std::string c, Type *t, Formal_list *f) { scopes.back().insertFunction(c, t, f); }
 
+  std::string getParentFunction(){
+    std::string s;
+    s = scopes.back().getParentFunction();
+    return s;
+  }
   Formal_list *getFormalsProcedure(std::string c){
     return scopes.back().getFormalsProcedure(c);
   }
@@ -149,7 +165,5 @@ public:
 private:
   std::vector<Scope> scopes;
 };
-
-extern SymbolTable st;
 
 extern SymbolTable st;

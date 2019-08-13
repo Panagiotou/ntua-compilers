@@ -3,7 +3,7 @@ program solve;
   var numberOfRings : integer;
 
   function hanoi (var source, target, auxiliary : array of char;
-                       rings : integer) : boolean;
+                       rings : integer) : integer;
 
      procedure move (var source, target : array of char);
      begin
@@ -22,12 +22,13 @@ program solve;
         hanoi(source,auxiliary,target,rings-1);
         move(source,target);
         hanoi(auxiliary,target,source,rings-1)
-      end
+      end;
+    result := rings
   end;
 
 begin
   (*writeString("Please,givethenumberofrings:");*)
-  (*numberOfRings := readInteger();*)
+  numberOfRings := readInteger();
   (*writeString("\nHereisthesolution:\n\n");*)
   hanoi("left","right","middle",numberOfRings)
 end.

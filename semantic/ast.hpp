@@ -92,8 +92,27 @@ public:
     std::cout << "Evaluating Lval";
     return -1;
   }
+  virtual bool isResult(){
+      return false;
+  }
 };
 
+class Result: public Lval {
+public:
+  Result(): var("result"), offset(-1){   }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Result(" << var << "@" << offset << ")";
+  }
+  virtual int eval() const override {
+    return rt_stack[offset];
+  }
+  virtual bool isResult() override{
+      return true;
+  }
+private:
+  std::string var;
+  int offset;
+};
 class BinOp: public Rval {
 public:
   BinOp(Expr *l, char *o, Expr *r): left(l), op(o), right(r) {
@@ -357,19 +376,37 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "Assign(";
     if(lval && exprRight){lval->printOn(out); out << " := "; exprRight->printOn(out);}
-    if(exprPointer && exprRight){ exprPointer->printOn(out); out << " ^ := "; exprRight->printOn(out);}
+    else if(exprPointer && exprRight){ exprPointer->printOn(out); out << " ^ := "; exprRight->printOn(out);}
     out << ")";
   }
   virtual void run() const override {
     std::cout << "Running Assign";
   }
   virtual void sem() override{
-    if(lval && exprRight){
+    if(lval->isResult()){
+      lval->sem();
+      exprRight->sem();
+      st.insert("result", exprRight->type);
+      std::string funName;
+      Type *funType;
+      funName  = st.getParentFunction();
+      funType = st.lookup(funName)->type;
+      Type *resultType = exprRight->type;
+      if(!(*resultType == *funType)){
+        std::cout << "Function " << funName.erase(0, 1) << " is of type ";
+        funType->printOn(std::cout);
+        std::cout << " but returns type ";
+        resultType->printOn(std::cout);
+        std::cout << "\n";
+        exit(1);
+      }
+    }
+    else if(lval && exprRight){
       if(lval->type != exprRight->type){
         std::cout << "Assign Type missmatch!"; exit(1);
       }
     }
-    if(exprPointer && exprRight){
+    else if(exprPointer && exprRight){
       if(exprPointer->type != exprRight->type){
         std::cout << "Assign Type missmatch!"; exit(1);
       }
@@ -691,8 +728,8 @@ public:
   ~Stmt_list() {
     for (Stmt *s : stmt_list) delete s;
   }
-  void append_stmt(Stmt *s) { stmt_list.push_back(s); }
-  void append_begin(Stmt *s) { stmt_list.insert(stmt_list.begin(), s); }
+  void append_stmt(Stmt *s) { if(s) stmt_list.push_back(s); }
+  void append_begin(Stmt *s) { if(s) stmt_list.insert(stmt_list.begin(), s); }
   virtual void printOn(std::ostream &out) const override {
     out << "\nStmt_list(";
     bool first = true;
@@ -859,6 +896,7 @@ private:
 class Header: public AST{
 public:
   virtual char *getFunctionName(){return nullptr;};
+  virtual Type *getFunctionType(){return nullptr;};
 };
 
 
@@ -996,8 +1034,11 @@ public:
     st.insertFunction(s, type, formal_list);
     formal_list->sem_();
   }
-  virtual char *getFunctionName () override{
+  virtual char *getFunctionName() override{
     return id;
+  }
+  virtual Type *getFunctionType() override{
+    return type;
   }
 private:
   char* id;
@@ -1057,7 +1098,7 @@ public:
     }
     else if(localType.compare("forp") == 0){
       header->sem();
-      body->semPorF(header, header->getFunctionName());
+      body->semPorF(header, header->getFunctionName(), header->getFunctionType());
     }
     else if(localType.compare("forward") == 0){
       header->sem();
@@ -1065,6 +1106,9 @@ public:
   }
   char *getFunctionName(){
     return header->getFunctionName();
+  }
+  Type *getFunctionType(){
+    return header->getFunctionType();
   }
 private:
   Decl_list *decl_list;
@@ -1116,13 +1160,13 @@ public:
     block->sem();
     st.closeScope();
   }
-  void semPorF( AST *h, char *funName = nullptr) override {
+  void semPorF( AST *h, char *funName = nullptr, AST* funType = nullptr) override {
     st.openScope();
     h->sem_();
     local_list->sem();
     block->sem();
     if(st.existsResult() && funName){
-        std::cout << "Function " << funName << " does not return\n";
+        std::cout << "Function " << funName << " does not have a result\n";
         exit(1);
     }
     st.closeScope();
