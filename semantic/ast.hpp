@@ -668,6 +668,7 @@ public:
   }
   virtual void sem() override {
     std::string s = id;
+    type = st.lookup(s)->type;
     if(expr_list) expr_list->sem();
     SymbolEntry *se;
     se = st.lookup(s);

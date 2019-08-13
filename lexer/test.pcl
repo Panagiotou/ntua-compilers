@@ -5,7 +5,7 @@ program solve;
   function hanoi (var source, target, auxiliary : array of char;
                        rings : integer) : integer;
 
-     procedure move (var source, target : array of char);
+     function hanoi (var source, target : array of char):array of char;
      begin
       (*
       writeString("Move from ");
@@ -14,16 +14,15 @@ program solve;
       writeString(target);
       writeString(".\n")
       *)
+      result := "sdc"
      end;
 
   begin
     if rings >= 1 then
       begin
-        hanoi(source,auxiliary,target,rings-1);
-        move(source,target);
-        hanoi(auxiliary,target,source,rings-1)
+        hanoi(source,target);
       end;
-    result := rings
+    result := hanoi(source,target)
   end;
 
 begin
