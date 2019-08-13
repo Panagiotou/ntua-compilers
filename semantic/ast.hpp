@@ -402,11 +402,16 @@ public:
       }
     }
     else if(lval && exprRight){
+      lval->sem();
+      exprRight->sem();
+      exprRight->printOn(std::cout);
       if(lval->type != exprRight->type){
         std::cout << "Assign Type missmatch!"; exit(1);
       }
     }
     else if(exprPointer && exprRight){
+      exprPointer->sem();
+      exprRight->sem();
       if(exprPointer->type != exprRight->type){
         std::cout << "Assign Type missmatch!"; exit(1);
       }
@@ -559,7 +564,7 @@ public:
   }
   virtual void sem() override {
     std::string s = id;
-    expr_list->sem();
+    if(expr_list) expr_list->sem();
     SymbolEntry *se;
     se = st.lookup(s);
     s = se->s;
@@ -660,6 +665,85 @@ public:
     if(id) out << id << " ";
     if(expr_list) expr_list->printOn(out);
     out << ")";
+  }
+  virtual void sem() override {
+    std::string s = id;
+    if(expr_list) expr_list->sem();
+    SymbolEntry *se;
+    se = st.lookup(s);
+    s = se->s;
+    if(st.isProcedure(s)){
+      std::vector<Formal *> formal_list;
+      formal_list = st.getFormalsProcedure(s)->getList();
+      int i = 0;
+      int argumentsExpected = 0;
+      int argumentsProvided = 0;
+      for (Formal *f : formal_list) {
+        int FormalTimes;
+        FormalTimes = f->getIdList().size();
+        argumentsExpected += FormalTimes;
+      }
+      argumentsProvided = expr_list->getList().size();
+      if(argumentsExpected != argumentsProvided){
+        std::cout << "Procedure " << s << " expected " << argumentsExpected << " arguments " << " got " << argumentsProvided;
+        exit(1);
+      }
+      for (Formal *f : formal_list) {
+        int FormalTimes;
+        FormalTimes = f->getIdList().size();
+        for (int j=0; j<FormalTimes; j++){
+          if(!(*f->getType() == *expr_list->getList().at(i)->getType())){
+            ERROR("Type mismatch on procedure arguments!\n");
+            std::cout << "In procedure "<< s << " arguments:\n";
+            std::cout << f->getIdList().at(j);
+            std::cout << "\n and \n";
+            expr_list->getList().at(i)->printOn(std::cout);
+            std::cout << "\nHave different types of ";
+            f->getType()->printOn(std::cout);
+            std::cout << " and ";
+            expr_list->getList().at(i)->getType()->printOn(std::cout);
+            exit(1);
+          }
+          i += 1;
+        }
+      }
+    }
+    else if(st.isFunction(s)){
+      std::vector<Formal *> formal_list;
+      formal_list = st.getFormalsFunction(s)->getList();
+      int i = 0;
+      int argumentsExpected = 0;
+      int argumentsProvided = 0;
+      for (Formal *f : formal_list) {
+        int FormalTimes;
+        FormalTimes = f->getIdList().size();
+        argumentsExpected += FormalTimes;
+      }
+      argumentsProvided = expr_list->getList().size();
+      if(argumentsExpected != argumentsProvided){
+        std::cout << "Procedure " << s << " expected " << argumentsExpected << " arguments " << " got " << argumentsProvided;
+        exit(1);
+      }
+      for (Formal *f : formal_list) {
+        int FormalTimes;
+        FormalTimes = f->getIdList().size();
+        for (int j=0; j<FormalTimes; j++){
+          if(!(*f->getType() == *expr_list->getList().at(i)->getType())){
+            ERROR("Type mismatch on function arguments!\n");
+            std::cout << "In function "<< s << " arguments:\n";
+            std::cout << f->getIdList().at(j);
+            std::cout << "\n and \n";
+            expr_list->getList().at(i)->printOn(std::cout);
+            std::cout << "\nHave different types of ";
+            f->getType()->printOn(std::cout);
+            std::cout << " and ";
+            expr_list->getList().at(i)->getType()->printOn(std::cout);
+            exit(1);
+          }
+          i += 1;
+        }
+      }
+    }
   }
 private:
   char *id;
