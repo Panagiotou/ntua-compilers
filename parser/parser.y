@@ -234,10 +234,10 @@ stmt:
   | "new" "[" expr "]" expr "^" { $$ = new New($3, $5); }
   | "new" l-value { $$ = new New($2); }
   | "new" expr "^" { $$ = new New($2); }
-  | "dispose" "[" "]" l-value { $$ = new Dispose($4); }
-  | "dispose" "[" "]" expr "^" { $$ = new Dispose($4); }
-  | "dispose" l-value { $$ = new Dispose($2); }
-  | "dispose" expr "^" { $$ = new Dispose($2); }
+  | "dispose" "[" "]" l-value { $$ = new Dispose($4, true); }
+  | "dispose" "[" "]" expr "^" { $$ = new Dispose($4, true); }
+  | "dispose" l-value { $$ = new Dispose($2, false); }
+  | "dispose" expr "^" { $$ = new Dispose($2, false); }
   ;
 
 expr:
@@ -261,7 +261,7 @@ r-value:
  | T_real_const { $$ = new Constreal(constReals.back()); constReals.pop_back(); }
  | T_const_char { $$ = new Constchar(constChars.back()); constChars.pop_back(); }
  | "(" r-value ")" { $$ = $2; }
- | "nil" { $$ = new Nil(); }
+ | "nil" { $$ = new NilR(); }
  | callr { $$ = $1; }
  | "@" l-value { $$ = new Reference($2); }
  | "not" expr { $$ = new UnOp(operators.back(), $2); operators.pop_back(); }

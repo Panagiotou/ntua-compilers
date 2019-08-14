@@ -24,6 +24,11 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "Nil()";
   }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Nil()";
+    return s;
+  }
   virtual bool operator==(const Type &that) const override {
     if(that.val == TYPE_NIL || that.val == TYPE_POINTER){
       return true;
@@ -42,6 +47,11 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "TypeRes()";
   }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "TypeRes()";
+    return s;
+  }
   virtual bool operator==(const Type &that) const override {
     std::cout << "Variable result is used uninitialized";
     exit(1);
@@ -54,6 +64,11 @@ public:
   Integer(){ val = TYPE_INTEGER; oftype = nullptr; size = -1;}
   virtual void printOn(std::ostream &out) const override {
     out << "Integer()";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Integer()";
+    return s;
   }
   virtual bool operator==(const Type &that) const override {
     if(that.val == TYPE_INTEGER){
@@ -69,6 +84,11 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "Char()";
   }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Char()";
+    return s;
+  }
   virtual bool operator==(const Type &that) const override {
     if(that.val == TYPE_CHAR){
       return true;
@@ -82,6 +102,11 @@ public:
   Real(){ val = TYPE_REAL; oftype = nullptr; size = -1;}
   virtual void printOn(std::ostream &out) const override {
     out << "Real()";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Real()";
+    return s;
   }
   virtual bool operator==(const Type &that) const override {
     if(that.val == TYPE_REAL){
@@ -97,6 +122,11 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "Boolean()";
   }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Boolean()";
+    return s;
+  }
   virtual bool operator==(const Type &that) const override {
     if(that.val == TYPE_BOOLEAN){
       return true;
@@ -111,6 +141,11 @@ public:
   ProcedureType(){ val = TYPE_PROCEDURE; oftype = nullptr; size = -1;}
   virtual void printOn(std::ostream &out) const override {
     out << "ProcedureType()";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "ProcedureType()";
+    return s;
   }
 
 };
@@ -134,6 +169,24 @@ public:
       out << "Array(";
       out << " of type:"; oftype->printOn(out);
       out << ")";
+    }
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    if(size > 0){
+      s += "Array(";
+      s += "of size: " + size;
+      s += " and type:";
+      s += oftype->getStringName();
+      s += ")";
+      return s;
+    }
+    else{
+      s += "Array(";
+      s += " of type:";
+      s += oftype->getStringName();
+      s += ")";
+      return s;
     }
   }
   virtual bool operator==(const Type &that) const override {
@@ -163,6 +216,14 @@ public:
     out << "Pointer(";
     out << " of type:"; oftype->printOn(out);
     out << ")";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Pointer(";
+    s += " of type:";
+    s += oftype->getStringName();
+    s += ")";
+    return s;
   }
   virtual bool operator==(const Type &that) const override {
     if(that.val == TYPE_NIL){

@@ -92,8 +92,6 @@ Esc \\[ "t""n""r""0"\'\"\\]
 \'(({Esc})|[^\"\'\\])\'                   {constChars.push_back(strdup(yytext)[0]); return T_const_char;}        /*'*/
 \"([^\'\"\r\n\\]|({Esc}))*\"              {constStrings.push_back(strdup(yytext)); return T_const_string;}      /*"*/
 
-\^{L}({L}|_|{D})*               { return T_op_point;}
-@{L}({L}|_|{D})*                { return T_op_addr; }
 
 [()+\-/%*=^\[\];:!,<>\.]          { return yytext[0]; }
 

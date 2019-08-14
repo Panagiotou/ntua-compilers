@@ -93,8 +93,16 @@ public:
     std::cout << "Cant find parrent function!";
     exit(1);
   }
+  void makeNew(std::string c){
+    isNewV[c] = true;
+  }
+  bool isNew(std::string c){
+    if (isNewV.find(c) == isNewV.end()) return false;
+    return true;
+  }
 private:
   std::map<std::string , SymbolEntry> locals;
+  std::map<std::string, bool> isNewV;
   std::map<std::string , bool> procedures;
   std::map<std::string , Formal_list *> procedureFormals;
   std::map<std::string , bool> functions;
@@ -161,6 +169,12 @@ public:
   }
   Formal_list *getFormalsFunction(std::string c){
     return scopes.back().getFormalsFunction(c);
+  }
+  void makeNew(std::string c){
+    scopes.back().makeNew(c);
+  }
+  bool isNew(std::string c){
+    return scopes.back().isNew(c);
   }
 private:
   std::vector<Scope> scopes;

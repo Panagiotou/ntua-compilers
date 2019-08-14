@@ -51,6 +51,7 @@ public:
   virtual bool isResult(){
       return false;
   }
+  bool isNew;
 };
 
 class Expr_list: public AST{
@@ -70,6 +71,18 @@ public:
       e->printOn(out);
     }
     out << ")";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Expr_list(";
+    bool first = true;
+    for (Expr *e : expr_list) {
+      if (!first) s +=  ", ";
+      first = false;
+      s += e->getStringName();
+    }
+    s += ")";
+    return s;
   }
   std::vector<Expr *> getList(){
     return expr_list;
@@ -104,6 +117,15 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "Result(" << var << "@" << offset << ")";
   }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    std::string va;
+    va = var;
+    std::string v;
+    v = offset;
+    s += "Result(" + va + "@" + v + ")";
+    return s;
+  }
   virtual int eval() const override {
     return rt_stack[offset];
   }
@@ -127,6 +149,15 @@ public:
     if(op) out << op;
     right->printOn(out);
     out << ")";
+  }
+  virtual std::string  getStringName() override {
+    std::string s = "";
+    s += "BinOp(";
+    s += left->getStringName();
+    if(op) s += op;
+    s += right->getStringName();
+    s += ")";
+    return s;
   }
   virtual bool check_number(Expr *left, Expr *right){
 
@@ -229,6 +260,14 @@ public:
     right->printOn(out);
     out << ")";
   }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "UnOp(";
+    if(op) s += op;
+    s += right->getStringName();
+    s += ")";
+    return s;
+  }
   virtual void sem() override {
     right->sem();
     if(right->type->val == TYPE_RES){
@@ -268,6 +307,15 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "Id(" << var << "@" << offset << ")";
   }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    std::string va;
+    va = var;
+    std::string v;
+    v = offset;
+    s += "Id(" + va + "@" + v + ")";
+    return s;
+  }
   virtual int eval() const override {
     return rt_stack[offset];
   }
@@ -295,6 +343,14 @@ public:
     if(lval)lval->printOn(out);
     if(expr)expr->printOn(out);
     out << ")";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "ArrayItem(";
+    if(lval) s+= lval->getStringName();
+    if(expr) s+= expr->getStringName();
+    s += ")";
+    return s;
   }
   virtual int eval() const override {
     std::cout << "Evaluating ArrayItem";
@@ -335,6 +391,13 @@ public:
     if(lval)lval->printOn(out);
     out << ")";
   }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s +=  "Reference(";
+    if(lval) s+= lval->getStringName();
+    s += ")";
+    return s;
+  }
   virtual int eval() const override {
     std::cout << "Evaluating Reference";
     return -1;
@@ -358,29 +421,7 @@ public:
   virtual void run() const = 0;
 };
 
-class Dispose: public Stmt{
-public:
-  Dispose(Lval *l){
-    lval = l;
-    expr = nullptr;
-  }
-  Dispose(Expr *e){
-    expr = e;
-    lval = nullptr;
-  }
-  virtual void printOn(std::ostream &out) const override {
-    out << "Dispose(";
-    if(lval) lval->printOn(out);
-    else expr->printOn(out);
-    out << ")";
-  }
-  virtual void run() const override {
-    std::cout << "Running Dispose";
-  }
-private:
-  Lval *lval;
-  Expr *expr;
-};
+
 
 class IdLabel: public Stmt{
 public:
@@ -393,6 +434,16 @@ public:
     if(id) out << id << " ";
     if(stmt) stmt->printOn(out);
     out << ")";
+  }
+  virtual std::string getStringName() override {
+    std::string s ="";
+    s += "IdLabel(";
+    std::string var;
+    var = id;
+    if(id) s+= var + " ";
+    if(stmt) s+= stmt->getStringName();
+    s+= ")";
+    return s;
   }
   virtual void run() const override {
     std::cout << "Running IdLabel";
@@ -419,6 +470,14 @@ public:
     if(lval && exprRight){lval->printOn(out); out << " := "; exprRight->printOn(out);}
     else if(exprPointer && exprRight){ exprPointer->printOn(out); out << " ^ := "; exprRight->printOn(out);}
     out << ")";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Assign(";
+    if(lval && exprRight){s += lval->getStringName(); s +=  " := "; s += exprRight->getStringName();}
+    else if(exprPointer && exprRight){ s += exprPointer->getStringName(); s +=  " ^ := "; exprRight->getStringName();}
+    s +=  ")";
+    return s;
   }
   virtual void run() const override {
     std::cout << "Running Assign";
@@ -535,6 +594,12 @@ public:
     out << "Return(";
     out << ")";
   }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Return(";
+    s +=  ")";
+    return s;
+  }
   virtual void run() const override {
     std::cout << "Running Return";
   }
@@ -562,6 +627,20 @@ public:
     }
     out << ")";
   }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Id_list(";
+    bool first = true;
+    for (char* id : id_list) {
+      if (!first) s += ", ";
+      first = false;
+      std::string var;
+      var = id;
+      if(id) s += var + " ";
+    }
+    s += ")";
+    return s;
+  }
   std::vector<char* > getlist(){
     return id_list;
   }
@@ -587,6 +666,14 @@ public:
     id_list->printOn(out);
     type->printOn(out);
     out << ")";
+ }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Formal(";
+    s += id_list->getStringName();
+    s += type->getStringName();
+    s += ")";
+    return s;
  }
  virtual void sem() override{
    for (char *id : id_list->getlist()) {
@@ -632,6 +719,18 @@ public:
     }
     out << ")";
   }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Formal_list(";
+    bool first = true;
+    for (Formal *f : formal_list) {
+      if (!first) s += ", ";
+      first = false;
+      s += f->getStringName();
+    }
+    s += ")";
+    return s;
+  }
   std::vector<Formal *> getList(){
     return formal_list;
   }
@@ -663,6 +762,16 @@ public:
     if(id) out << id << " ";
     if(expr_list) expr_list->printOn(out);
     out << ")";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Call(";
+    std::string var;
+    var = id;
+    if(id) s += var + " ";
+    if(expr_list) s += expr_list->getStringName();
+    s += ")";
+    return s;
   }
   virtual void run() const override {
     std::cout << "Running Call";
@@ -770,6 +879,16 @@ public:
     if(id) out << id << " ";
     if(expr_list) expr_list->printOn(out);
     out << ")";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Callr(";
+    std::string var;
+    var = id;
+    if(id) s += var + " ";
+    if(expr_list) s += expr_list->getStringName();
+    s += ")";
+    return s;
   }
   virtual void sem() override {
     std::string s = id;
@@ -885,8 +1004,138 @@ public:
     if(exprBrackets) exprBrackets->printOn(out);
     out << ")";
   }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "New(";
+    if(lval) s += lval->getStringName();
+    if(exprPointer) s+=exprPointer->getStringName();
+    if(exprBrackets) s+= exprBrackets->getStringName();
+    s += ")";
+    return s;
+  }
   virtual void run() const override {
     std::cout << "Running New";
+  }
+  virtual void sem() override {
+    if(lval && !exprPointer && exprBrackets){
+      // "new" "[" expr "]" l-value
+      lval->sem();
+      exprBrackets->sem();
+      if(lval->type->val == TYPE_RES){
+        lval->type = st.lookup("result")->type;
+      }
+      if(exprBrackets->type->val == TYPE_RES){
+        exprBrackets->type = st.lookup("result")->type;
+      }
+      if(lval->type->val != TYPE_POINTER){
+        printOn(std::cout);
+        std::cout << "\nIn expression new [expr] l-value, l-value must be a pointer but is of type ";
+        lval->type->printOn(std::cout);
+        std::cout << "\n";
+        exit(1);
+      }
+      else{
+        if(lval->type->oftype->val != TYPE_ARRAY){
+          printOn(std::cout);
+          std::cout << "\nIn expression new [expr] l-value, l-value must be a pointer to array but is a pointer to ";
+          lval->type->oftype->printOn(std::cout);
+          std::cout << "\n";
+          exit(1);
+        }
+      }
+      if(exprBrackets->type->val != TYPE_INTEGER){
+        printOn(std::cout);
+        std::cout << "\nIn expression new [expr] l-value, expr must be of type integer, but it is of type ";
+        exprBrackets->type->oftype->printOn(std::cout);
+        std::cout << "\n";
+        exit(1);
+      }
+      st.makeNew(lval->getStringName());
+    }
+    else if(!lval && exprPointer && exprBrackets){
+      // "new" "[" expr "]" expr "^"
+      exprPointer->sem();
+      exprBrackets->sem();
+      if(exprPointer->type->val == TYPE_RES){
+        exprPointer->type = st.lookup("result")->type;
+      }
+      if(exprBrackets->type->val == TYPE_RES){
+        exprBrackets->type = st.lookup("result")->type;
+      }
+      if(exprPointer->type->val != TYPE_POINTER){
+        printOn(std::cout);
+        std::cout << "\nIn expression new [expr] expr ^, expr must be a pointer but is of type ";
+        exprPointer->type->printOn(std::cout);
+        std::cout << "\n";
+        exit(1);
+      }
+      else{
+        if(exprPointer->type->oftype->val != TYPE_POINTER){
+          printOn(std::cout);
+          std::cout << "\nIn expression new [expr] expr ^, (expr ^) must be a pointer, but is of type ";
+          exprPointer->type->oftype->printOn(std::cout);
+          std::cout << "\n";
+          exit(1);
+        }
+        else{
+          if(exprPointer->type->oftype->oftype->val != TYPE_ARRAY){
+            printOn(std::cout);
+            std::cout << "\nIn expression new [expr] expr ^, (expr ^) must be a pointer to array but is a pointer to ";
+            exprPointer->type->oftype->oftype->printOn(std::cout);
+            std::cout << "\n";
+            exit(1);
+          }
+        }
+      }
+      if(exprBrackets->type->val != TYPE_INTEGER){
+        printOn(std::cout);
+        std::cout << "\nIn expression new [expr] l-value, expr must be of type integer, but it is of type ";
+        exprBrackets->type->oftype->printOn(std::cout);
+        std::cout << "\n";
+        exit(1);
+      }
+      st.makeNew(exprPointer->getStringName());
+    }
+    else if(!lval && exprPointer && !exprBrackets){
+      // "new" expr "^"
+      exprPointer->sem();
+      if(exprPointer->type->val == TYPE_RES){
+        exprPointer->type = st.lookup("result")->type;
+      }
+      if(exprPointer->type->val != TYPE_POINTER){
+        printOn(std::cout);
+        std::cout << "\nIn expression new expr ^, expr must be a pointer but is of type ";
+        exprPointer->type->printOn(std::cout);
+        std::cout << "\n";
+        exit(1);
+      }
+      else{
+        if(exprPointer->type->oftype->val != TYPE_POINTER){
+          printOn(std::cout);
+          std::cout << "\nIn expression new expr ^, (expr ^) must be a pointer but is of type ";
+          exprPointer->type->oftype->printOn(std::cout);
+          std::cout << "\n";
+          exit(1);
+        }
+      }
+      st.makeNew(exprPointer->getStringName());
+    }
+    else{
+      // "new" l-value
+      lval->sem();
+      if(lval->type->val == TYPE_RES){
+        lval->type = st.lookup("result")->type;
+      }
+      if(lval->type->val != TYPE_POINTER){
+        printOn(std::cout);
+        std::cout << "\nIn expression new l-value, l-value must be a pointer but is of type ";
+        lval->type->printOn(std::cout);
+        std::cout << "\n";
+        exit(1);
+      }
+      st.makeNew(lval->getStringName());
+    }
+
   }
 private:
   Lval *lval;
@@ -903,6 +1152,15 @@ public:
     out << "Goto(";
     out << id << " ";
     out << ")";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Goto(";
+    std::string var;
+    var = id;
+    s += var + " ";
+    s += ")";
+    return s;
   }
   virtual void run() const override {
     std::cout << "Running Goto";
@@ -931,6 +1189,19 @@ public:
     }
     out << "\n)";
   }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "\nStmt_list(";
+    bool first = true;
+    for (Stmt *s1 : stmt_list) {
+      if (!first) s += ", ";
+      first = false;
+      s += "\n\t";
+      s += s1->getStringName();
+    }
+    s += "\n)";
+    return s;
+  }
   virtual void sem() override {
     for (Stmt *s : stmt_list) s->sem();
   }
@@ -948,6 +1219,13 @@ public:
     out << "Constint(";
     out << con ;
     out << ")";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Constint(";
+    s += con ;
+    s += ")";
+    return s;
   }
   virtual int eval() const override { return con; }
   // virtual void sem() override { type = new Integer(); }
@@ -967,6 +1245,13 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "Constchar(" << con << ")";
   }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    std::string var;
+    var = con;
+    s += "Constchar(" + var + ")";
+    return s;
+  }
   virtual int eval() const override { return 0; } //wrong
   // virtual void sem() override { type = new Char(); }
 private:
@@ -980,6 +1265,13 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "Conststring(" << con << ")";
   }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    std::string var;
+    var = con;
+    s += "Conststring(" + var + ")";
+    return s;
+  }
   virtual int eval() const override { return 0; } //wrong
   // virtual void sem() override { type = new String(); }
 private:
@@ -992,6 +1284,13 @@ public:
     type = new Real();}
   virtual void printOn(std::ostream &out) const override {
     out << "Constreal(" << con << ")";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    std::string var;
+    var = con;
+    s += "Constreal(" + var + ")";
+    return s;
   }
   virtual int eval() const override { return 0; } //wrong
   // virtual void sem() override { type = new Real(); }
@@ -1017,25 +1316,207 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "Constboolean(" << con << ")";
   }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    std::string var;
+    var = con;
+    s += "Constboolean(" + var + ")";
+    return s;
+  }
   virtual int eval() const override { return 0; } //wrong
   // virtual void sem() override { type = new Boolean(); }
 private:
   bool con;
 };
 
-class Nil: public Rval {
+class NilR: public Rval {
 public:
-  Nil(){
+  NilR(){
     con = nullptr;
     type = new TypeNil();
   }
   virtual void printOn(std::ostream &out) const override {
-    out << "Nil()";
+    out << "NilR()";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "NilR()";
+    return s;
   }
   virtual int eval() const override { return 0; } //wrong
-  // virtual void sem() override { type = new Real(); }
 private:
   char *con;
+};
+
+class NilL: public Lval {
+public:
+  NilL(){
+    con = nullptr;
+    type = new TypeNil();
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "NilL()";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "NilL()";
+    return s;
+  }
+  virtual int eval() const override { return 0; } //wrong
+private:
+  char *con;
+};
+
+class Dispose: public Stmt{
+public:
+  Dispose(Lval *l, bool b){
+    lval = l;
+    expr = nullptr;
+    isBracket = b;
+  }
+  Dispose(Expr *e, bool b){
+    expr = e;
+    lval = nullptr;
+    isBracket = b;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Dispose(";
+    if(lval) lval->printOn(out);
+    else expr->printOn(out);
+    out << ")";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Dispose(";
+    if(lval) s += lval->getStringName();
+    else s += expr->getStringName();
+    s += ")";
+    return s;
+  }
+  virtual void run() const override {
+    std::cout << "Running Dispose";
+  }
+  virtual void sem() override {
+    if(lval && !expr && !isBracket){
+      // dispose l-value
+      lval->sem();
+      if(lval->type->val == TYPE_RES){
+        lval->type = st.lookup("result")->type;
+      }
+      if(lval->type->val != TYPE_POINTER){
+        printOn(std::cout);
+        std::cout << "\nIn expression dispose l-value, l-value must be a pointer but is of type ";
+        lval->type->printOn(std::cout);
+        std::cout << "\n";
+        exit(1);
+      }
+      if(!st.isNew(lval->getStringName())){
+        printOn(std::cout);
+        std::cout << "\nIn expression dispose l-value, l-value must have had been created by new l-value\n";
+        exit(1);
+      }
+      lval = new NilL();
+    }
+    else if(lval && !expr && isBracket){
+      // dispose [] l-value
+      lval->sem();
+      if(lval->type->val == TYPE_RES){
+        lval->type = st.lookup("result")->type;
+      }
+      if(lval->type->val != TYPE_POINTER){
+        printOn(std::cout);
+        std::cout << "\nIn expression dispose [] l-value, l-value must be a pointer but is of type ";
+        lval->type->printOn(std::cout);
+        std::cout << "\n";
+        exit(1);
+      }
+      if(!st.isNew(lval->getStringName())){
+        printOn(std::cout);
+        std::cout << "\nIn expression dispose [] l-value, l-value must have had been created by new l-value\n";
+        exit(1);
+      }
+      if(lval->type->oftype->val != TYPE_ARRAY){
+        printOn(std::cout);
+        std::cout << "\nIn expression dispose [] l-value, l-value must be a pointer to array but is a pointer to ";
+        lval->type->oftype->printOn(std::cout);
+        std::cout << "\n";
+        exit(1);
+      }
+      lval = new NilL();
+    }
+    else if(!lval && expr && !isBracket){
+      // dispose expr "^"
+      expr->sem();
+      if(expr->type->val == TYPE_RES){
+        expr->type = st.lookup("result")->type;
+      }
+      if(expr->type->val != TYPE_POINTER){
+        printOn(std::cout);
+        std::cout << "\nIn expression dispose expr ^, expr must be a pointer but is of type ";
+        expr->type->printOn(std::cout);
+        std::cout << "\n";
+        exit(1);
+      }
+      else{
+        if(!st.isNew(expr->getStringName())){
+          printOn(std::cout);
+          std::cout << "\nIn expression dispose expr ^, expr ^ must have had been created by new expr ^\n";
+          exit(1);
+        }
+        if(expr->type->oftype->val != TYPE_POINTER){
+          printOn(std::cout);
+          std::cout << "\nIn expression disposes expr ^, (expr ^) must be a pointer, but is of type ";
+          expr->type->oftype->printOn(std::cout);
+          std::cout << "\n";
+          exit(1);
+        }
+        expr = new NilL();
+      }
+    }
+    else{
+      // dispose [] expr "^"
+      expr->sem();
+      if(expr->type->val == TYPE_RES){
+        expr->type = st.lookup("result")->type;
+      }
+      if(expr->type->val != TYPE_POINTER){
+        printOn(std::cout);
+        std::cout << "\nIn expression dispose [] expr ^, expr must be a pointer but is of type ";
+        expr->type->printOn(std::cout);
+        std::cout << "\n";
+        exit(1);
+      }
+      else{
+        if(!st.isNew(expr->getStringName())){
+          printOn(std::cout);
+          std::cout << "\nIn expression dispose [] expr ^, [] expr ^ must have had been created by new [] expr ^\n";
+          exit(1);
+        }
+        if(expr->type->oftype->val != TYPE_POINTER){
+          printOn(std::cout);
+          std::cout << "\nIn expression dispose [] expr ^, (expr ^) must be a pointer, but is of type ";
+          expr->type->oftype->printOn(std::cout);
+          std::cout << "\n";
+          exit(1);
+        }
+        else{
+          if(expr->type->oftype->oftype->val != TYPE_ARRAY){
+            printOn(std::cout);
+            std::cout << "\nIn expression dispose [] expr ^, (expr ^) must be a pointer to array but is a pointer to ";
+            expr->type->oftype->oftype->printOn(std::cout);
+            std::cout << "\n";
+            exit(1);
+          }
+        }
+        expr = new NilL();
+      }
+    }
+}
+
+private:
+  Lval *lval;
+  Expr *expr;
+  bool isBracket;
 };
 
 class If: public Stmt {
@@ -1049,6 +1530,15 @@ public:
     if(stmt1) stmt1->printOn(out);
     if (stmt2) stmt2->printOn(out);
     out << ")";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "If(";
+    if(cond) s += cond->getStringName();
+    if(stmt1) s += stmt1->getStringName();
+    if (stmt2) s += stmt2->getStringName();
+    s += ")";
+    return s;
   }
   virtual void sem() override {
     cond->sem();
@@ -1080,7 +1570,20 @@ public:
   While(Expr *e, Stmt *s): expr(e), stmt(s) { }
   ~While() { delete expr; delete stmt; }
   virtual void printOn(std::ostream &out) const override {
-    out << "While(" << *expr << ", " << *stmt << ")";
+    out << "While(";
+    if(expr) expr->printOn(std::cout);
+    out << ", ";
+    if(stmt) stmt->printOn(std::cout);
+    out << ")";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "While(";
+    if(expr) s += expr->getStringName();
+    s += ", ";
+    if(stmt) stmt->getStringName();
+    s += ")";
+    return s;
   }
   virtual void sem() override {
     expr->sem();
@@ -1118,6 +1621,13 @@ public:
     if(stmt_list) stmt_list->printOn(out);
     out << ")";
   }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Block(";
+    if(stmt_list) s += stmt_list->getStringName();
+    s += ")";
+    return s;
+  }
   virtual void sem() override {
     stmt_list->sem();
   }
@@ -1150,6 +1660,13 @@ public:
     id_list->printOn(out);
     out << ")";
   };
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Label(";
+    s += id_list->getStringName();
+    s += ")";
+    return s;
+  };
   virtual void sem() override {
     id_list->sem();
   }
@@ -1169,6 +1686,14 @@ public:
     id_list->printOn(out);
     type->printOn(out);
     out << ")";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Decl(";
+    s += id_list->getStringName();
+    s += type->getStringName();
+    s += ")";
+    return s;
   }
   virtual void sem() override{
     for (char *id : id_list->getlist()) {
@@ -1200,6 +1725,18 @@ public:
     }
     out << ")";
   }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Decl_list(";
+    bool first = true;
+    for (Decl *d : decl_list) {
+      if (!first) s += ", ";
+      first = false;
+      s += d->getStringName();
+    }
+    s += ")";
+    return s;
+  }
   virtual void sem() override {
     for (Decl *d : decl_list) d->sem();
   }
@@ -1224,6 +1761,16 @@ public:
     if(id) out << id << " ";
     formal_list->printOn(out);
     out << ")";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Procedure(";
+    std::string var;
+    var = id;
+    if(id) s += var + " ";
+    s += formal_list->getStringName();
+    s += ")";
+    return s;
   }
   virtual void sem() override {
     std::string s = id;
@@ -1257,6 +1804,17 @@ public:
     formal_list->printOn(out);
     type->printOn(out);
     out << ")";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Function(";
+    std::string var;
+    var = id;
+    s += var + " ";
+    s += formal_list->getStringName();
+    s += type->getStringName();
+    s += ")";
+    return s;
   }
   virtual void sem() override {
     std::string s = id;
@@ -1324,6 +1882,25 @@ public:
     }
     out << ")";
   };
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Local(";
+    if(localType.compare("var") == 0){
+      s += decl_list->getStringName();
+    }
+    else if(localType.compare("label") == 0){
+      s += label->getStringName();
+    }
+    else if(localType.compare("forp") == 0){
+      s += header->getStringName();
+      s += body->getStringName();
+    }
+    else if(localType.compare("forward") == 0){
+      s += header->getStringName();
+    }
+    s += ")";
+    return s;
+  };
   virtual void sem() override {
     if(localType.compare("var") == 0){
       decl_list->sem();
@@ -1372,6 +1949,18 @@ public:
     }
     out << ")\n";
   }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Local_list(";
+    bool first = true;
+    for (Local *l : local_list) {
+      if (!first) s += ", ";
+      first = false;
+      s += l->getStringName();
+    }
+    s += ")\n";
+    return s;
+  }
   virtual void sem() override {
     for (Local *l : local_list) l->sem();
   }
@@ -1414,6 +2003,14 @@ public:
     if(local_list) local_list->printOn(out);
     if(block) block->printOn(out);
     out << ")";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "Body(";
+    if(local_list) s += local_list->getStringName();
+    if(block) s += block->getStringName();
+    s += ")";
+    return s;
   }
 private:
   Local_list *local_list;
