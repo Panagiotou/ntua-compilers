@@ -19,6 +19,7 @@ inline std::ostream& operator<<(std::ostream &out, Types t) {
   case TYPE_POINTER: out << "pointer"; break;
   case TYPE_PROCEDURE: out << "type procedure"; break;
   case TYPE_NIL: out << "nil"; break;
+  case TYPE_RES: out << "res"; break;
   }
   return out;
 }
@@ -100,7 +101,7 @@ public:
 
 class Result: public Lval {
 public:
-  Result(): var("result"), offset(-1){   }
+  Result(): var("result"), offset(-1){type = new TypeRes();}
   virtual void printOn(std::ostream &out) const override {
     out << "Result(" << var << "@" << offset << ")";
   }
@@ -110,10 +111,12 @@ public:
   virtual bool isResult() override{
       return true;
   }
+  virtual void sem() override{  }
 private:
   std::string var;
   int offset;
 };
+
 class BinOp: public Rval {
 public:
   BinOp(Expr *l, char *o, Expr *r): left(l), op(o), right(r) {
@@ -133,6 +136,14 @@ public:
   virtual void sem() override {
     left->sem();
     right->sem();
+
+    if(left->type->val == TYPE_RES){
+      left->type = st.lookup("result")->type;
+    }
+    if(right->type->val == TYPE_RES){
+      right->type = st.lookup("result")->type;
+    }
+
     if(! strcmp(op, "+") || ! strcmp(op, "*") || ! strcmp(op, "-")){
       if( left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
         type = new Integer();
@@ -393,7 +404,9 @@ public:
       exprRight->sem();
       if(lval->isResult()){
         //result
-        st.insert("result", exprRight->type);
+        if(!st.existsResult()){
+          st.insert("result", exprRight->type);
+        }
         std::string funName;
         Type *funType;
         funName  = st.getParentFunction();
@@ -407,6 +420,7 @@ public:
           std::cout << "\n";
           exit(1);
         }
+        lval->type = resultType;
       }
       else{
         // not result
@@ -436,7 +450,10 @@ public:
           std::cout << " must be a Pointer to some type\n";
           exit(1);
         }
-        st.insert("result", exprRight->type->oftype);
+        if(!st.existsResult()){
+          st.insert("result", exprRight->type->oftype);
+        }
+
         std::string funName;
         Type *funType;
         funName  = st.getParentFunction();
@@ -450,6 +467,7 @@ public:
           std::cout << "\n";
           exit(1);
         }
+        exprPointer->type = resultType;
       }
       else{
         // not result
@@ -1001,6 +1019,9 @@ public:
   }
   virtual void sem() override {
     cond->sem();
+    if(cond->type->val == TYPE_RES){
+      cond->type = st.lookup("result")->type;
+    }
     if(cond->type->val == TYPE_BOOLEAN){
       stmt1->sem();
       if (stmt2 != nullptr) stmt2->sem();
@@ -1030,6 +1051,9 @@ public:
   }
   virtual void sem() override {
     expr->sem();
+    if(expr->type->val == TYPE_RES){
+      expr->type = st.lookup("result")->type;
+    }
     if(expr->type->val == TYPE_BOOLEAN){
       stmt->sem();
     }
@@ -1343,7 +1367,7 @@ public:
     h->sem_();
     local_list->sem();
     block->sem();
-    if(st.existsResult() && funName){
+    if(!st.existsResult() && funName){
         std::cout << "Function " << funName << " does not have a result\n";
         exit(1);
     }

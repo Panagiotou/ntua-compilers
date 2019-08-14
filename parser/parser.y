@@ -250,7 +250,7 @@ l-value:
  | "result" { $$ = new Result(); }
  | T_const_string { $$ = new Conststring(constStrings.back()); constStrings.pop_back();}
  | l-value "[" expr "]" { $$ = new ArrayItem($1, $3); }
- | "(" l-value ")"
+ | "(" l-value ")" { $$ = $2; }
  ;
 
 
@@ -260,7 +260,7 @@ r-value:
  | "false" { $$ = new Constboolean("false"); }
  | T_real_const { $$ = new Constreal(constReals.back()); constReals.pop_back(); }
  | T_const_char { $$ = new Constchar(constChars.back()); constChars.pop_back(); }
- | "(" r-value ")"
+ | "(" r-value ")" { $$ = $2; }
  | "nil" { $$ = new Nil(); }
  | callr
  | "@" l-value { $$ = new Reference($2); }

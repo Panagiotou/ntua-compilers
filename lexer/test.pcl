@@ -3,9 +3,9 @@ program solve;
   var numberOfRings : integer;
 
   function hanoi (var source, target, auxiliary : array of char;
-                       rings : integer) : integer;
+                       rings : integer) : boolean;
 
-     function hanoi (var source, target : array of char):boolean;
+    procedure move (var source, target : array of char);
      begin
       (*
       writeString("Move from ");
@@ -14,15 +14,18 @@ program solve;
       writeString(target);
       writeString(".\n")
       *)
-      result := true
      end;
 
   begin
     if 2 >= 1 then
       begin
-        hanoi(source,target);
+        move(source,target);
       end;
-    result ^:= nil
+    result := true;
+    if (result) then
+      begin
+        result := false;
+      end
   end;
 
 begin

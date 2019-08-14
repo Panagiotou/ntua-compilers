@@ -124,9 +124,9 @@ public:
     SymbolEntry *e;
     e = scopes.back().lookup("result");
     if (e != nullptr){
-      return 0;
+      return 1;
     }
-    return 1;
+    return 0;
   }
   void printScopes(){
     int k = 0;

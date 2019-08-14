@@ -1,6 +1,6 @@
 #include "AST.hpp"
 
-enum Types { TYPE_INTEGER, TYPE_BOOLEAN, TYPE_REAL, TYPE_ARRAY, TYPE_IARRAY, TYPE_CHAR, TYPE_STRING, TYPE_POINTER, TYPE_PROCEDURE, TYPE_NIL };
+enum Types { TYPE_INTEGER, TYPE_BOOLEAN, TYPE_REAL, TYPE_ARRAY, TYPE_IARRAY, TYPE_CHAR, TYPE_STRING, TYPE_POINTER, TYPE_PROCEDURE, TYPE_NIL, TYPE_RES };
 
 
 class Type: public AST{
@@ -29,6 +29,22 @@ public:
       return true;
     }
     return false;
+  }
+};
+
+class TypeRes: public Type{
+public:
+  TypeRes(){
+    val = TYPE_RES;
+    oftype = nullptr;
+    size = -1;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "TypeRes()";
+  }
+  virtual bool operator==(const Type &that) const override {
+    std::cout << "Variable result is used uninitialized";
+    exit(1);
   }
 };
 
