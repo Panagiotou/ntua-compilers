@@ -231,6 +231,9 @@ public:
   }
   virtual void sem() override {
     right->sem();
+    if(right->type->val == TYPE_RES){
+      right->type = st.lookup("result")->type;
+    }
     if(! strcmp(op, "+") || ! strcmp(op, "-")){
       if(right->type->val == TYPE_INTEGER || right->type->val == TYPE_REAL){
         type = right->type;
@@ -338,6 +341,9 @@ public:
   }
   virtual void sem() override{
       lval->sem();
+      if(lval->type->val == TYPE_RES){
+        lval->type = st.lookup("result")->type;
+      }
       type = new Pointer(lval->type);
   }
 private:
