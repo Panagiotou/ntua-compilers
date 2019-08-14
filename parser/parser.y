@@ -220,10 +220,10 @@ stmt_list:
 
 stmt:
   /*nothing*/ { $$ = nullptr;}
-  | l-value ":=" expr { $$ = new Assign($1, $3); /*check if lvalue is result*/ }
+  | l-value ":=" expr { $$ = new Assign($1, $3); }
   | expr "^" ":=" expr { $$ = new Assign($1, $4); }
-  | block
-  | call
+  | block { $$ = $1; }
+  | call { $$ = $1; }
   | "if" expr "then" stmt { $$ = new If($2, $4); }
   | "if" expr "then" stmt "else" stmt { $$ = new If($2, $4, $6); }
   | "while" expr "do" stmt { $$ = new While($2, $4); }
@@ -241,8 +241,8 @@ stmt:
   ;
 
 expr:
- l-value
- | r-value
+ l-value { $$ = $1; }
+ | r-value { $$ = $1; }
  ;
 
 l-value:
@@ -262,7 +262,7 @@ r-value:
  | T_const_char { $$ = new Constchar(constChars.back()); constChars.pop_back(); }
  | "(" r-value ")" { $$ = $2; }
  | "nil" { $$ = new Nil(); }
- | callr
+ | callr { $$ = $1; }
  | "@" l-value { $$ = new Reference($2); }
  | "not" expr { $$ = new UnOp(operators.back(), $2); operators.pop_back(); }
  | "+" expr { $$ = new UnOp(operators.back(), $2); operators.pop_back(); }

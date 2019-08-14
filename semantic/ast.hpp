@@ -13,7 +13,6 @@ inline std::ostream& operator<<(std::ostream &out, Types t) {
   case TYPE_BOOLEAN: out << "bool"; break;
   case TYPE_REAL: out << "real"; break;
   case TYPE_ARRAY: out << "array known length"; break;
-  case TYPE_IARRAY: out << "array unknown length"; break;
   case TYPE_CHAR: out << "char"; break;
   case TYPE_STRING: out << "string"; break;
   case TYPE_POINTER: out << "pointer"; break;
@@ -172,7 +171,7 @@ public:
       }
     }
     if(! strcmp(op, "=") || ! strcmp(op, "<>")){
-      if(check_number(left, right) || ((left->type->val == right->type->val) && (left->type->val != TYPE_ARRAY || left->type->val != TYPE_IARRAY))){
+      if(check_number(left, right) || ((left->type->val == right->type->val) && (left->type->val != TYPE_ARRAY))){
         type = new Boolean();
       }
       else{
@@ -297,6 +296,26 @@ public:
   virtual int eval() const override {
     std::cout << "Evaluating ArrayItem";
     return -1;
+  }
+  virtual void sem() override {
+    lval->sem();
+    expr->sem();
+    if(lval->type->val == TYPE_RES){
+      lval->type = st.lookup("result")->type;
+    }
+    if(lval->type->val != TYPE_ARRAY){
+      printOn(std::cout);
+      std::cout << "\n is not of type array!\n";
+      exit(1);
+    }
+    else{
+      if(expr->type->val != TYPE_INTEGER){
+        printOn(std::cout);
+        std::cout << "\nbracket expression is not of type integer!\n";
+        exit(1);
+      }
+    }
+    type = lval->type->oftype;
   }
 private:
   Lval *lval;
@@ -425,8 +444,12 @@ public:
       else{
         // not result
         if(!(*lval->type == *exprRight->type)){
-          std::cout << "Assign Type missmatch!";
+          std::cout << "Assign Type missmatch!\n";
           printOn(std::cout);
+          std::cout << "\n";
+          lval->type->printOn(std::cout);
+          std::cout << " := ";
+          exprRight->type->printOn(std::cout);
           std::cout << "\n";
           exit(1);
         }
@@ -482,6 +505,10 @@ public:
           if(!(*exprPointer->type == *exprRight->type->oftype)){
             std::cout << "Assign Type missmatch!\n";
             printOn(std::cout);
+            std::cout << "\n";
+            lval->type->printOn(std::cout);
+            std::cout << " := ";
+            exprRight->type->printOn(std::cout);
             std::cout << "\n";
             exit(1);
           }

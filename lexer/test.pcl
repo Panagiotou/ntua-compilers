@@ -5,7 +5,9 @@ program solve;
   function hanoi (var source, target, auxiliary : array of char;
                        rings : integer) : boolean;
 
-    procedure move (var source, target : array of char);
+    function move (var source, target : array of char): array of boolean;
+    var i : integer;
+    var j : array of array of boolean;
      begin
       (*
       writeString("Move from ");
@@ -14,6 +16,9 @@ program solve;
       writeString(target);
       writeString(".\n")
       *)
+
+      i := 0;
+      result := j[i];
      end;
 
   begin
@@ -21,7 +26,7 @@ program solve;
       begin
         move(source,target);
       end;
-    result := true;
+    result := move(source, target);
     if (result) then
       begin
         result := false;
