@@ -829,6 +829,10 @@ public:
           i += 1;
         }
       }
+      if(st.isForward(s)){
+        std::cout << "Cant call procedure " << s << " because it is forward declared, but not defined.\n";
+        exit(1);
+      }
     }
     else if(st.isFunction(s)){
       std::vector<Formal *> formal_list;
@@ -865,6 +869,10 @@ public:
           i += 1;
         }
       }
+    }
+    if(st.isForward(s)){
+      std::cout << "Cant call function " << s << " because it is forward declared, but not defined.\n";
+      exit(1);
     }
   }
 
@@ -1802,6 +1810,7 @@ public:
         std::cout << "Procedure " << s << " was previously declared with arguments: " << prev << " but now it is defined with arguments " << now << "\n";
         exit(1);
       }
+      st.removeForward(s);
     }
     else{
       st.insertProcedure(s, new ProcedureType(), formal_list);
@@ -1821,6 +1830,7 @@ public:
         std::cout << "Procedure " << s << " was previously declared with arguments: " << prev << " but now it is defined with arguments " << now << "\n";
         exit(1);
       }
+      st.removeForward(s);
     }
     else{
       st.insertProcedure(s, new ProcedureType(), formal_list);
@@ -1877,6 +1887,7 @@ public:
         std::cout << "Function " << s << " was previously declared with arguments: " << prev << " but now it is defined with arguments " << now << "\n";
         exit(1);
       }
+      st.removeForward(s);
     }
     else{
       st.insertFunction(s, type, formal_list);
@@ -1896,6 +1907,7 @@ public:
         std::cout << "Function " << s << " was previously declared with arguments: " << prev << " but now it is defined with arguments " << now << "\n";
         exit(1);
       }
+      st.removeForward(s);
     }
     else{
       st.insertFunction(s, type, formal_list);

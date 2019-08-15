@@ -103,6 +103,11 @@ public:
   void insertProcedureForward(std::string c, Type *t, Formal_list *f){ insertProcedure(c, t, f); isForwardV[c] = true; }
   void insertFunctionForward(std::string c, Type *t, Formal_list *f){ insertFunction(c, t, f); isForwardV[c] = true; }
   void insertForward(std::string c, Type *t){ insert(c, t); isForwardV[c] = true; }
+  void removeForward(std::string c){
+    std::map<std::string, bool>::iterator it;
+    it=isForwardV.find(c);
+    isForwardV.erase (it);
+  }
   bool isForward(std::string c){
     if (isForwardV.find(c) == isForwardV.end()) return false;
     return true;
@@ -190,6 +195,9 @@ public:
   }
   bool isForward(std::string c){
     return scopes.back().isForward(c);
+  }
+  void removeForward(std::string c){
+    scopes.back().removeForward(c);
   }
 private:
   std::vector<Scope> scopes;
