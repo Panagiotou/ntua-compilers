@@ -100,9 +100,17 @@ public:
     if (isNewV.find(c) == isNewV.end()) return false;
     return true;
   }
+  void insertProcedureForward(std::string c, Type *t, Formal_list *f){ insertProcedure(c, t, f); isForwardV[c] = true; }
+  void insertFunctionForward(std::string c, Type *t, Formal_list *f){ insertFunction(c, t, f); isForwardV[c] = true; }
+  void insertForward(std::string c, Type *t){ insert(c, t); isForwardV[c] = true; }
+  bool isForward(std::string c){
+    if (isForwardV.find(c) == isForwardV.end()) return false;
+    return true;
+  }
 private:
   std::map<std::string , SymbolEntry> locals;
   std::map<std::string, bool> isNewV;
+  std::map<std::string, bool> isForwardV;
   std::map<std::string , bool> procedures;
   std::map<std::string , Formal_list *> procedureFormals;
   std::map<std::string , bool> functions;
@@ -157,6 +165,10 @@ public:
   bool isFunction(std::string c){
     return scopes.back().isFunction(c);
   }
+  void insertProcedureForward(std::string c, Type *t, Formal_list *f){ scopes.back().insertProcedureForward(c, t, f); }
+  void insertFunctionForward(std::string c, Type *t, Formal_list *f){ scopes.back().insertFunctionForward(c, t, f); }
+  void insertForward(std::string c, Type *t){ scopes.back().insertForward(c, t); }
+
   void insertFunction(std::string c, Type *t, Formal_list *f) { scopes.back().insertFunction(c, t, f); }
 
   std::string getParentFunction(){
@@ -175,6 +187,9 @@ public:
   }
   bool isNew(std::string c){
     return scopes.back().isNew(c);
+  }
+  bool isForward(std::string c){
+    return scopes.back().isForward(c);
   }
 private:
   std::vector<Scope> scopes;

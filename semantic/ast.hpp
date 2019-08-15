@@ -675,18 +675,27 @@ public:
     s += ")";
     return s;
  }
+ virtual void semForward() override{
+   for (char *id : id_list->getlist()) {
+     std::string var = id;
+     st.insertForward(var, type);
+   }
+ }
  virtual void sem() override{
    for (char *id : id_list->getlist()) {
      std::string var = id;
-
-     st.insert(var, type);
+     if(!st.isForward(var)){
+       st.insert(var, type);
+     }
    }
  }
  virtual void sem_() override{
    for (char *id : id_list->getlist()) {
      std::string var = id;
      var = "_" + var;
-     st.insert(var, type);
+     if(!st.isForward(var)){
+       st.insert(var, type);
+     }
    }
  }
  Type *getType(){
@@ -734,10 +743,13 @@ public:
   std::vector<Formal *> getList(){
     return formal_list;
   }
-  virtual void sem() {
+  virtual void semForward() override{
+    for (Formal *f : formal_list) f->semForward();
+  }
+  virtual void sem() override{
     for (Formal *f : formal_list) f->sem();
   }
-  virtual void sem_() {
+  virtual void sem_() override{
     for (Formal *f : formal_list) f->sem_();
   }
 private:
@@ -1772,16 +1784,47 @@ public:
     s += ")";
     return s;
   }
+  virtual void semForward() override{
+    std::string s = id;
+    formal_list->semForward();
+    st.insertProcedureForward(s, new ProcedureType(), formal_list);
+  }
   virtual void sem() override {
     std::string s = id;
-    st.insertProcedure(s, new ProcedureType(), formal_list);
     formal_list->sem();
+    if(st.isForward(s)){
+      //Procedure was previously forward declared
+      std::string prev;
+      std::string now;
+      prev = st.getFormalsProcedure(s)->getStringName();
+      now = formal_list->getStringName();
+      if(prev.compare(now)){
+        std::cout << "Procedure " << s << " was previously declared with arguments: " << prev << " but now it is defined with arguments " << now << "\n";
+        exit(1);
+      }
+    }
+    else{
+      st.insertProcedure(s, new ProcedureType(), formal_list);
+    }
   }
   virtual void sem_() override {
     std::string s = id;
     s = "_" + s;
-    st.insertProcedure(s, new ProcedureType(), formal_list);
     formal_list->sem_();
+    if(st.isForward(s)){
+      //Procedure was previously forward declared
+      std::string prev;
+      std::string now;
+      prev = st.getFormalsProcedure(s)->getStringName();
+      now = formal_list->getStringName();
+      if(! prev.compare(now)){
+        std::cout << "Procedure " << s << " was previously declared with arguments: " << prev << " but now it is defined with arguments " << now << "\n";
+        exit(1);
+      }
+    }
+    else{
+      st.insertProcedure(s, new ProcedureType(), formal_list);
+    }
   }
 private:
   char* id;
@@ -1816,16 +1859,47 @@ public:
     s += ")";
     return s;
   }
+  virtual void semForward() override{
+    std::string s = id;
+    formal_list->semForward();
+    st.insertFunctionForward(s, type, formal_list);
+  }
   virtual void sem() override {
     std::string s = id;
-    st.insertFunction(s, type, formal_list);
     formal_list->sem();
+    if(st.isForward(s)){
+      //Function was previously forward declared
+      std::string prev;
+      std::string now;
+      prev = st.getFormalsFunction(s)->getStringName();
+      now = formal_list->getStringName();
+      if(! prev.compare(now)){
+        std::cout << "Function " << s << " was previously declared with arguments: " << prev << " but now it is defined with arguments " << now << "\n";
+        exit(1);
+      }
+    }
+    else{
+      st.insertFunction(s, type, formal_list);
+    }
   }
   virtual void sem_() override {
     std::string s = id;
     s = "_" + s;
-    st.insertFunction(s, type, formal_list);
     formal_list->sem_();
+    if(st.isForward(s)){
+      //Function was previously forward declared
+      std::string prev;
+      std::string now;
+      prev = st.getFormalsFunction(s)->getStringName();
+      now = formal_list->getStringName();
+      if(! prev.compare(now)){
+        std::cout << "Function " << s << " was previously declared with arguments: " << prev << " but now it is defined with arguments " << now << "\n";
+        exit(1);
+      }
+    }
+    else{
+      st.insertFunction(s, type, formal_list);
+    }
   }
   virtual char *getFunctionName() override{
     return id;
@@ -1913,7 +1987,7 @@ public:
       body->semPorF(header, header->getFunctionName(), header->getFunctionType());
     }
     else if(localType.compare("forward") == 0){
-      header->sem();
+      header->semForward();
     }
   }
   char *getFunctionName(){

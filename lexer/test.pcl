@@ -5,20 +5,22 @@ program solve;
   function hanoi (var source, target, auxiliary : array of char;
                        rings : integer) : boolean;
 
-    procedure move (var source, target : array of char);
-    var n : ^^integer;
-     begin
-      (*
-      writeString("Move from ");
-      writeString(source);
-      writeString("to");
-      writeString(target);
-      writeString(".\n")
-      *)
-      dispose n^
-     end;
+     forward procedure move(var source, target : array of char);
+
+     procedure move(var source, target : array of char);
+      var n : ^^integer;
+       begin
+        (*
+        writeString("Move from ");
+        writeString(source);
+        writeString("to");
+        writeString(target);
+        writeString(".\n")
+        *)
+       end;
 
   begin
+  move(source, target);
     result := false
   end;
 
