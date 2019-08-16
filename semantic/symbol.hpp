@@ -216,7 +216,7 @@ public:
 
   void insertFunction(std::string c, Type *t, Formal_list *f) { scopes.back().insertFunction(c, t, f); }
 
-  std::string getParentFunction(){
+  std::string getParent(){
     std::string s;
     if(scopes.size() == 1){
       s = scopes.back().getParentFunction();

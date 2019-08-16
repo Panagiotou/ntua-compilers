@@ -480,6 +480,8 @@ public:
     std::cout << "Running Assign";
   }
   virtual void sem() override{
+    std::string funName;
+    Type *funType;
     if(lval && exprRight){
       lval->sem();
       exprRight->sem();
@@ -488,10 +490,13 @@ public:
         if(!st.existsResult()){
           st.insert("result", exprRight->type);
         }
-        std::string funName;
-        Type *funType;
-        funName  = st.getParentFunction();
+
+        funName  = st.getParent();
         funType = st.lookup(funName)->type;
+        if(funType->val == TYPE_PROCEDURE){
+          std::cout << "Procedure " << funName << " cant return a result!\n";
+          exit(1);
+        }
         Type *resultType = exprRight->type;
         if(!(*resultType == *funType)){
           std::cout << "Function " << funName << " is of type ";
@@ -528,6 +533,16 @@ public:
       }
       if(exprPointer->isResult()){
         //result
+        funName  = st.getParent();
+        funType = st.lookup(funName)->type;
+        if(funType->val == TYPE_PROCEDURE){
+          std::cout << "Procedure " << funName << " cant return a result!\n";
+          exit(1);
+        }
+        if(st.isProcedure(funName)){
+          std::cout << "Procedure " << funName << " cant return a result!\n";
+          exit(1);
+        }
         if(!(exprRight->type->val == TYPE_POINTER )){
           std::cout << "Assign Type missmatch!\n";
           std::cout << "Expression: ";
@@ -541,7 +556,7 @@ public:
 
         std::string funName;
         Type *funType;
-        funName  = st.getParentFunction();
+        funName  = st.getParent();
         funType = st.lookup(funName)->type;
         Type *resultType = exprRight->type->oftype;
         if(!(*resultType == *funType)){
@@ -1622,7 +1637,7 @@ public:
     return s;
   }
   virtual void sem() override {
-    std::string parentf = st.getParentFunction();
+    std::string parentf = st.getParent();
     if(st.getFormalsFunctionAll(parentf)){
       st.getFormalsFunctionAll(parentf)->sem();
     }

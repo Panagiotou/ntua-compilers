@@ -2,23 +2,22 @@ program solve;
 
   var numberOfRings : integer;
 
-  function hanoi (var source, target, auxiliary : array of char;
-                       rings : integer) : boolean;
+  procedure hanoi (var source, target, auxiliary : array of char;
+                       rings : integer);
 
-     function move1(var source, target : array of char): char;
+     procedure move1(var source, target : array of char);
        begin
        source := target;
-
-       result := 'c';
+       result := '1';
        end;
-     function move(var source, target : array of char): boolean;
+      procedure move(var source, target : array of char);
        begin
        source := target;
-       result := false
+       move1(source,target)
        end;
 
   begin
-    result := move1(source, target)
+    move1(source, target)
   end;
 
 begin
