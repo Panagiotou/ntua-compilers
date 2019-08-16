@@ -34,7 +34,9 @@ public:
     locals[c] = SymbolEntry(t, offset++, c);
     ++size;
     procedures[c] = false;
+    procedureFormals[c] = nullptr;
     functions[c] = false;
+    functionFormals[c] = nullptr;
   }
   void insertProcedure(std::string c, Type *t, Formal_list *f) {
     if (locals.find(c) != locals.end()) {
@@ -45,6 +47,8 @@ public:
     ++size;
     procedures[c] = true;
     procedureFormals[c] = f;
+    functionFormals[c] = nullptr;
+
   }
   bool isProcedure(std::string c){
     return procedures[c];
@@ -58,6 +62,8 @@ public:
     ++size;
     functions[c] = true;
     functionFormals[c] = f;
+    procedureFormals[c] = nullptr;
+
   }
   Formal_list *getFormalsProcedure(std::string c){
     return procedureFormals[c];
@@ -84,10 +90,8 @@ public:
   }
   std::string getParentFunction(){
     for(auto it = locals.cbegin(); it != locals.cend(); ++it){
-      if(isFunction(it->first)){
-        if (it->first.find("_") == 0){
+      if(isFunction(it->first)||isProcedure(it->first)){
           return it->first;
-        }
       }
     }
     std::cout << "Cant find parrent function!";
@@ -112,6 +116,24 @@ public:
     if (isForwardV.find(c) == isForwardV.end()) return false;
     return true;
   }
+  bool isemptyForward(){
+    return isForwardV.empty();
+  }
+  std::vector<std::string> getForPForward(){
+    std::map<std::string, bool>::iterator it;
+    std::vector<std::string> r;
+    for ( it = isForwardV.begin(); it != isForwardV.end(); it++ )
+    {
+      if(isFunction(it->first) || isProcedure(it->first)){
+        r.push_back(it->first);
+      }
+    }
+    return r;
+  }
+  bool exists(std::string c){
+    if (locals.find(c) == locals.end()) return false;
+    return true;
+  }
 private:
   std::map<std::string , SymbolEntry> locals;
   std::map<std::string, bool> isNewV;
@@ -132,15 +154,17 @@ public:
     scopes.push_back(Scope(ofs));
   }
   void closeScope() { scopes.pop_back(); };
+
   SymbolEntry *lookup(std::string c) {
     SymbolEntry *e;
-    e = scopes.back().lookup(c);
-    if (e != nullptr) return e;
-    e = scopes.back().lookup("_" + c);
-    if (e != nullptr) return e;
+    for (auto i = scopes.rbegin(); i != scopes.rend(); ++i) {
+        e = i->lookup(c);
+        if(e) return e;
+    }
     std::cerr << "Unknown variable " << c << std::endl;
     exit(1);
   }
+
   bool existsResult(){
     SymbolEntry *e;
     e = scopes.back().lookup("result");
@@ -156,6 +180,22 @@ public:
       i->print();
       k++;
     }
+  }
+  Formal_list *getFormalsProcedureAll(std::string c){
+    for (auto i = scopes.rbegin(); i != scopes.rend(); ++i) {
+      if(i->getFormalsProcedure(c)){
+              return i->getFormalsProcedure(c);
+      }
+    }
+    return nullptr;
+  }
+  Formal_list *getFormalsFunctionAll(std::string c){
+    for (auto i = scopes.rbegin(); i != scopes.rend(); ++i) {
+      if(i->getFormalsFunction(c)){
+              return i->getFormalsFunction(c);
+      }
+    }
+    return nullptr;
   }
   void printLastScope(){
     std::cout << "Printing Scope \n";
@@ -178,8 +218,19 @@ public:
 
   std::string getParentFunction(){
     std::string s;
-    s = scopes.back().getParentFunction();
-    return s;
+    if(scopes.size() == 1){
+      s = scopes.back().getParentFunction();
+      return s;
+    }
+    if(scopes.size()-2 >= 0){
+      s = scopes[scopes.size() - 2].getParentFunction();
+      return s;
+    }
+    else{
+      std::cout << "Cant find parent function\n";
+      exit(1);
+    }
+
   }
   Formal_list *getFormalsProcedure(std::string c){
     return scopes.back().getFormalsProcedure(c);
@@ -198,6 +249,12 @@ public:
   }
   void removeForward(std::string c){
     scopes.back().removeForward(c);
+  }
+  bool isemptyForward(){
+    return scopes.back().isemptyForward();
+  }
+  std::vector<std::string> getForPForward(){
+    return scopes.back().getForPForward();
   }
 private:
   std::vector<Scope> scopes;

@@ -320,9 +320,6 @@ public:
     return rt_stack[offset];
   }
   virtual void sem() override {
-    // SymbolEntry *e = st.lookup(var);
-    // Types type = e->type;
-    // offset = e->offset;
     std::string s = var;
     type = st.lookup(s)->type;
   }
@@ -497,7 +494,7 @@ public:
         funType = st.lookup(funName)->type;
         Type *resultType = exprRight->type;
         if(!(*resultType == *funType)){
-          std::cout << "Function " << funName.erase(0, 1) << " is of type ";
+          std::cout << "Function " << funName << " is of type ";
           funType->printOn(std::cout);
           std::cout << " but returns type ";
           resultType->printOn(std::cout);
@@ -689,15 +686,6 @@ public:
      }
    }
  }
- virtual void sem_() override{
-   for (char *id : id_list->getlist()) {
-     std::string var = id;
-     var = "_" + var;
-     if(!st.isForward(var)){
-       st.insert(var, type);
-     }
-   }
- }
  Type *getType(){
    return type;
  }
@@ -749,9 +737,6 @@ public:
   virtual void sem() override{
     for (Formal *f : formal_list) f->sem();
   }
-  virtual void sem_() override{
-    for (Formal *f : formal_list) f->sem_();
-  }
 private:
    std::vector<Formal *> formal_list;
 };
@@ -791,12 +776,10 @@ public:
   virtual void sem() override {
     std::string s = id;
     if(expr_list) expr_list->sem();
-    SymbolEntry *se;
-    se = st.lookup(s);
-    s = se->s;
+    st.lookup(s);
     if(st.isProcedure(s)){
       std::vector<Formal *> formal_list;
-      formal_list = st.getFormalsProcedure(s)->getList();
+      formal_list = st.getFormalsProcedureAll(s)->getList();
       int i = 0;
       int argumentsExpected = 0;
       int argumentsProvided = 0;
@@ -829,14 +812,10 @@ public:
           i += 1;
         }
       }
-      if(st.isForward(s)){
-        std::cout << "Cant call procedure " << s << " because it is forward declared, but not defined.\n";
-        exit(1);
-      }
     }
     else if(st.isFunction(s)){
       std::vector<Formal *> formal_list;
-      formal_list = st.getFormalsFunction(s)->getList();
+      formal_list = st.getFormalsFunctionAll(s)->getList();
       int i = 0;
       int argumentsExpected = 0;
       int argumentsProvided = 0;
@@ -869,10 +848,6 @@ public:
           i += 1;
         }
       }
-    }
-    if(st.isForward(s)){
-      std::cout << "Cant call function " << s << " because it is forward declared, but not defined.\n";
-      exit(1);
     }
   }
 
@@ -914,9 +889,7 @@ public:
     std::string s = id;
     type = st.lookup(s)->type;
     if(expr_list) expr_list->sem();
-    SymbolEntry *se;
-    se = st.lookup(s);
-    s = se->s;
+    st.lookup(s);
     if(st.isProcedure(s)){
       std::vector<Formal *> formal_list;
       formal_list = st.getFormalsProcedure(s)->getList();
@@ -1649,6 +1622,13 @@ public:
     return s;
   }
   virtual void sem() override {
+    std::string parentf = st.getParentFunction();
+    if(st.getFormalsFunctionAll(parentf)){
+      st.getFormalsFunctionAll(parentf)->sem();
+    }
+    else if(st.getFormalsProcedureAll(parentf)){
+      st.getFormalsProcedureAll(parentf)->sem();
+    }
     stmt_list->sem();
   }
 virtual void run() const override {
@@ -1799,7 +1779,6 @@ public:
   }
   virtual void sem() override {
     std::string s = id;
-    formal_list->sem();
     if(st.isForward(s)){
       //Procedure was previously forward declared
       std::string prev;
@@ -1811,26 +1790,12 @@ public:
         exit(1);
       }
       st.removeForward(s);
-    }
-    else{
-      st.insertProcedure(s, new ProcedureType(), formal_list);
-    }
-  }
-  virtual void sem_() override {
-    std::string s = id;
-    s = "_" + s;
-    formal_list->sem_();
-    if(st.isForward(s)){
-      //Procedure was previously forward declared
-      std::string prev;
-      std::string now;
-      prev = st.getFormalsProcedure(s)->getStringName();
-      now = formal_list->getStringName();
-      if(! prev.compare(now)){
-        std::cout << "Procedure " << s << " was previously declared with arguments: " << prev << " but now it is defined with arguments " << now << "\n";
-        exit(1);
+      for(Formal *formal : formal_list->getList()){
+        for(char *c : formal->getIdList()){
+          std::string stri = c;
+          st.removeForward(stri);
+        }
       }
-      st.removeForward(s);
     }
     else{
       st.insertProcedure(s, new ProcedureType(), formal_list);
@@ -1876,7 +1841,6 @@ public:
   }
   virtual void sem() override {
     std::string s = id;
-    formal_list->sem();
     if(st.isForward(s)){
       //Function was previously forward declared
       std::string prev;
@@ -1888,26 +1852,12 @@ public:
         exit(1);
       }
       st.removeForward(s);
-    }
-    else{
-      st.insertFunction(s, type, formal_list);
-    }
-  }
-  virtual void sem_() override {
-    std::string s = id;
-    s = "_" + s;
-    formal_list->sem_();
-    if(st.isForward(s)){
-      //Function was previously forward declared
-      std::string prev;
-      std::string now;
-      prev = st.getFormalsFunction(s)->getStringName();
-      now = formal_list->getStringName();
-      if(! prev.compare(now)){
-        std::cout << "Function " << s << " was previously declared with arguments: " << prev << " but now it is defined with arguments " << now << "\n";
-        exit(1);
+      for(Formal *formal : formal_list->getList()){
+        for(char *c : formal->getIdList()){
+          std::string stri = c;
+          st.removeForward(stri);
+        }
       }
-      st.removeForward(s);
     }
     else{
       st.insertFunction(s, type, formal_list);
@@ -1996,7 +1946,7 @@ public:
     }
     else if(localType.compare("forp") == 0){
       header->sem();
-      body->semPorF(header, header->getFunctionName(), header->getFunctionType());
+      body->sem();
     }
     else if(localType.compare("forward") == 0){
       header->semForward();
@@ -2068,16 +2018,14 @@ public:
     st.openScope();
     local_list->sem();
     block->sem();
-    st.closeScope();
-  }
-  void semPorF( AST *h, char *funName = nullptr, AST* funType = nullptr) override {
-    st.openScope();
-    h->sem_();
-    local_list->sem();
-    block->sem();
-    if(!st.existsResult() && funName){
-        std::cout << "Function " << funName << " does not have a result\n";
-        exit(1);
+    if(!st.isemptyForward()){
+      std::vector<std::string> v;
+      v = st.getForPForward();
+      std::cout << "The following functions or procedures where declared but not implemented\n";
+      for(std::string fp : v){
+        std::cout << "\t" << fp << "\n";
+      }
+      exit(1);
     }
     st.closeScope();
   }
