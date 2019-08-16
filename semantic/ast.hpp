@@ -498,6 +498,11 @@ public:
           exit(1);
         }
         Type *resultType = exprRight->type;
+        if(resultType->val == TYPE_ARRAY){
+          std::cout << "In function " << funName << " , result can not be of type Array\n";
+          exit(1);
+
+        }
         if(!(*resultType == *funType)){
           std::cout << "Function " << funName << " is of type ";
           funType->printOn(std::cout);
@@ -541,6 +546,10 @@ public:
         }
         if(st.isProcedure(funName)){
           std::cout << "Procedure " << funName << " cant return a result!\n";
+          exit(1);
+        }
+        if(exprRight->type->val == TYPE_ARRAY){
+          std::cout << "In function " << funName << " , result can not be of type Array\n";
           exit(1);
         }
         if(!(exprRight->type->val == TYPE_POINTER )){
@@ -1856,6 +1865,11 @@ public:
   }
   virtual void sem() override {
     std::string s = id;
+    if(type->val == TYPE_ARRAY){
+      std::cout << "Function " << s << " , can not be of type Array\n";
+      exit(1);
+
+    }
     if(st.isForward(s)){
       //Function was previously forward declared
       std::string prev;

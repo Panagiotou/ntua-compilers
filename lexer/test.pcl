@@ -5,10 +5,10 @@ program solve;
   procedure hanoi (var source, target, auxiliary : array of char;
                        rings : integer);
 
-     procedure move1(var source, target : array of char);
+     function move1(var source, target : array of char) : char;
        begin
        source := target;
-       result := '1';
+       result := 'a'
        end;
       procedure move(var source, target : array of char);
        begin
