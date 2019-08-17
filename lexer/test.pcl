@@ -5,19 +5,20 @@ program solve;
   procedure hanoi (var source, target, auxiliary : array of char;
                        rings : integer);
 
-     function move1(var source, target : array of char) : char;
+      forward procedure move(var source, target : array of char);
+
+      procedure move1(var source, target : array of char);
        begin
-       source := target;
-       result := 'a'
+        move(target, source)
        end;
       procedure move(var source, target : array of char);
        begin
-       source := target;
-       move1(source,target)
+       move(source, target);
+       move1(source, target)
        end;
 
   begin
-    move1(source, target)
+    move1(auxiliary, auxiliary)
   end;
 
 begin

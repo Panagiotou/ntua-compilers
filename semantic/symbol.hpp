@@ -27,8 +27,8 @@ public:
   }
   void insert(std::string c, Type *t) {
     if (locals.find(c) != locals.end()) {
+      print();
       std::cerr << "Duplicate variable " << c << std::endl;
-          print();
       exit(1);
     }
     locals[c] = SymbolEntry(t, offset++, c);
@@ -48,6 +48,7 @@ public:
     procedures[c] = true;
     procedureFormals[c] = f;
     functionFormals[c] = nullptr;
+    localForPQueue.push_back(c);
 
   }
   bool isProcedure(std::string c){
@@ -63,7 +64,14 @@ public:
     functions[c] = true;
     functionFormals[c] = f;
     procedureFormals[c] = nullptr;
+    localForPQueue.push_back(c);
 
+  }
+  void printParents(){
+    std::cout << "Parents\n";
+    for(std::string s : localForPQueue){
+      std::cout << "\t" << s <<"\n";
+    }
   }
   Formal_list *getFormalsProcedure(std::string c){
     return procedureFormals[c];
@@ -89,13 +97,13 @@ public:
     }
   }
   std::string getParentFunction(){
-    for(auto it = locals.cbegin(); it != locals.cend(); ++it){
-      if(isFunction(it->first)||isProcedure(it->first)){
-          return it->first;
-      }
+    if(localForPQueue.size()>0){
+      return localForPQueue.back();
     }
-    std::cout << "Cant find parrent function!";
-    exit(1);
+    else{
+      std::cout << "Cant find parrent function!";
+      exit(1);
+    }
   }
   void makeNew(std::string c){
     isNewV[c] = true;
@@ -134,8 +142,12 @@ public:
     if (locals.find(c) == locals.end()) return false;
     return true;
   }
+  void insertParent(std::string c){
+    localForPQueue.push_back(c);
+  }
 private:
   std::map<std::string , SymbolEntry> locals;
+  std::vector<std::string> localForPQueue;
   std::map<std::string, bool> isNewV;
   std::map<std::string, bool> isForwardV;
   std::map<std::string , bool> procedures;
@@ -203,12 +215,18 @@ public:
   }
   int getSizeOfCurrentScope() const { return scopes.back().getSize(); }
   void insert(std::string c, Type *t) { scopes.back().insert(c, t); }
-  bool isProcedure(std::string c){
-    return scopes.back().isProcedure(c);
+  bool isProcedure(std::string s){
+    for (auto i = scopes.rbegin(); i != scopes.rend(); ++i) {
+      if(i->exists(s)) return i->isProcedure(s);
+    }
+    return false;
   }
   void insertProcedure(std::string c, Type *t, Formal_list *f) { scopes.back().insertProcedure(c, t, f); }
-  bool isFunction(std::string c){
-    return scopes.back().isFunction(c);
+  bool isFunction(std::string s){
+    for (auto i = scopes.rbegin(); i != scopes.rend(); ++i) {
+      if(i->exists(s)) return i->isFunction(s);
+    }
+    return false;
   }
   void insertProcedureForward(std::string c, Type *t, Formal_list *f){ scopes.back().insertProcedureForward(c, t, f); }
   void insertFunctionForward(std::string c, Type *t, Formal_list *f){ scopes.back().insertFunctionForward(c, t, f); }
@@ -230,7 +248,6 @@ public:
       std::cout << "Cant find parent function\n";
       exit(1);
     }
-
   }
   Formal_list *getFormalsProcedure(std::string c){
     return scopes.back().getFormalsProcedure(c);
@@ -255,6 +272,25 @@ public:
   }
   std::vector<std::string> getForPForward(){
     return scopes.back().getForPForward();
+  }
+  void printParents(){
+    int k = 0;
+    for (auto i = scopes.rbegin(); i != scopes.rend(); ++i) {
+      std::cout << "Printing Parents for Scope " << k << "\n";
+      i->printParents();
+      k++;
+    }
+  }
+  void insertParent(std::string s){
+    findScopeToinsert(s);
+  }
+  void findScopeToinsert(std::string s){
+    for (auto i = scopes.rbegin(); i != scopes.rend(); ++i) {
+      if(i->exists(s)) i->insertParent(s); return;
+    }
+    std::cout << "Cant find scope of " << s << "\n";
+    exit(1);
+    return ;
   }
 private:
   std::vector<Scope> scopes;

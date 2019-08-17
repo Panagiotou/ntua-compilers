@@ -802,6 +802,7 @@ public:
     if(expr_list) expr_list->sem();
     st.lookup(s);
     if(st.isProcedure(s)){
+
       std::vector<Formal *> formal_list;
       formal_list = st.getFormalsProcedureAll(s)->getList();
       int i = 0;
@@ -1798,7 +1799,6 @@ public:
   }
   virtual void semForward() override{
     std::string s = id;
-    formal_list->semForward();
     st.insertProcedureForward(s, new ProcedureType(), formal_list);
   }
   virtual void sem() override {
@@ -1814,12 +1814,7 @@ public:
         exit(1);
       }
       st.removeForward(s);
-      for(Formal *formal : formal_list->getList()){
-        for(char *c : formal->getIdList()){
-          std::string stri = c;
-          st.removeForward(stri);
-        }
-      }
+      st.insertParent(s);
     }
     else{
       st.insertProcedure(s, new ProcedureType(), formal_list);
@@ -1860,7 +1855,6 @@ public:
   }
   virtual void semForward() override{
     std::string s = id;
-    formal_list->semForward();
     st.insertFunctionForward(s, type, formal_list);
   }
   virtual void sem() override {
@@ -1876,17 +1870,13 @@ public:
       std::string now;
       prev = st.getFormalsFunction(s)->getStringName();
       now = formal_list->getStringName();
-      if(! prev.compare(now)){
+      if(prev.compare(now)){
         std::cout << "Function " << s << " was previously declared with arguments: " << prev << " but now it is defined with arguments " << now << "\n";
         exit(1);
       }
       st.removeForward(s);
-      for(Formal *formal : formal_list->getList()){
-        for(char *c : formal->getIdList()){
-          std::string stri = c;
-          st.removeForward(stri);
-        }
-      }
+      st.insertParent(s);
+
     }
     else{
       st.insertFunction(s, type, formal_list);
@@ -2047,6 +2037,12 @@ public:
     st.openScope();
     local_list->sem();
     block->sem();
+    std::string funName;
+    funName = st.getParent();
+    if(!st.existsResult() && st.isFunction(funName)){
+      std::cout << "Function " << funName << " does not have a result\n";
+      exit(1);
+    }
     if(!st.isemptyForward()){
       std::vector<std::string> v;
       v = st.getForPForward();
