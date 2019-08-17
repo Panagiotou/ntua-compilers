@@ -15,6 +15,7 @@ struct SymbolEntry {
 };
 
 class Formal_list;
+class Stmt;
 class Scope {
 public:
   Scope() : locals(), offset(-1), size(0) {}
@@ -37,6 +38,24 @@ public:
     procedureFormals[c] = nullptr;
     functions[c] = false;
     functionFormals[c] = nullptr;
+    label[c] = false;
+  }
+  void insertLabel(std::string c, Type *t) {
+    if (locals.find(c) != locals.end()) {
+      print();
+      std::cerr << "Duplicate variable " << c << std::endl;
+      exit(1);
+    }
+    locals[c] = SymbolEntry(t, offset++, c);
+    ++size;
+    procedures[c] = false;
+    procedureFormals[c] = nullptr;
+    functions[c] = false;
+    functionFormals[c] = nullptr;
+    label[c] = true;
+  }
+  bool isLabel(std::string c){
+    return label[c];
   }
   void insertProcedure(std::string c, Type *t, Formal_list *f) {
     if (locals.find(c) != locals.end()) {
@@ -48,6 +67,7 @@ public:
     procedures[c] = true;
     procedureFormals[c] = f;
     functionFormals[c] = nullptr;
+    label[c] = false;
     localForPQueue.push_back(c);
 
   }
@@ -64,6 +84,7 @@ public:
     functions[c] = true;
     functionFormals[c] = f;
     procedureFormals[c] = nullptr;
+    label[c] = false;
     localForPQueue.push_back(c);
 
   }
@@ -145,6 +166,13 @@ public:
   void insertParent(std::string c){
     localForPQueue.push_back(c);
   }
+  void insertLabelStmt(std::string c, Stmt *s){
+    labelStmt[c] = s;
+  }
+  bool LabelHasStmt(std::string c){
+    if (labelStmt.find(c) == labelStmt.end()) return false;
+    return true;
+  }
 private:
   std::map<std::string , SymbolEntry> locals;
   std::vector<std::string> localForPQueue;
@@ -154,7 +182,8 @@ private:
   std::map<std::string , Formal_list *> procedureFormals;
   std::map<std::string , bool> functions;
   std::map<std::string , Formal_list *> functionFormals;
-
+  std::map<std::string , bool> label;
+  std::map<std::string , Stmt *> labelStmt;
   int offset;
   int size;
 };
@@ -221,6 +250,7 @@ public:
     }
     return false;
   }
+  void insertLabel(std::string c, Type *t) { scopes.back().insertLabel(c, t); }
   void insertProcedure(std::string c, Type *t, Formal_list *f) { scopes.back().insertProcedure(c, t, f); }
   bool isFunction(std::string s){
     for (auto i = scopes.rbegin(); i != scopes.rend(); ++i) {
@@ -261,6 +291,12 @@ public:
   bool isNew(std::string c){
     return scopes.back().isNew(c);
   }
+  bool isLabel(std::string c){
+    return scopes.back().isLabel(c);
+  }
+  void insertLabelStmt(std::string c, Stmt *s){
+    scopes.back().insertLabelStmt(c, s);
+  }
   bool isForward(std::string c){
     return scopes.back().isForward(c);
   }
@@ -269,6 +305,9 @@ public:
   }
   bool isemptyForward(){
     return scopes.back().isemptyForward();
+  }
+  bool LabelHasStmt(std::string s){
+    return scopes.back().LabelHasStmt(s);
   }
   std::vector<std::string> getForPForward(){
     return scopes.back().getForPForward();

@@ -22,8 +22,10 @@ program solve;
   end;
 
 begin
+  x : numberOfRings := 1;
   (*writeString("Please,givethenumberofrings:");*)
   (*numberOfRings := readInteger();*)
   (*writeString("\nHereisthesolution:\n\n");*)
-  hanoi("left","right","middle",numberOfRings)
+  hanoi("left","right","middle",numberOfRings);
+  goto x
 end.

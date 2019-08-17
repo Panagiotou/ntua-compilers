@@ -19,6 +19,7 @@ inline std::ostream& operator<<(std::ostream &out, Types t) {
   case TYPE_PROCEDURE: out << "type procedure"; break;
   case TYPE_NIL: out << "nil"; break;
   case TYPE_RES: out << "res"; break;
+  case TYPE_LABEL: out << "label"; break;
   }
   return out;
 }
@@ -441,6 +442,18 @@ public:
     if(stmt) s+= stmt->getStringName();
     s+= ")";
     return s;
+  }
+  virtual void sem() override{
+    std::string s;
+    s = id;
+    if(!st.isLabel(s)){
+      printOn(std::cout);
+      std::cout << "\n" << s << " is not a label in this scope!\n";
+      exit(1);
+    }
+    else{
+      st.insertLabelStmt(s, stmt);
+    }
   }
   virtual void run() const override {
     std::cout << "Running IdLabel";
@@ -1183,6 +1196,22 @@ public:
   virtual void run() const override {
     std::cout << "Running Goto";
   }
+  virtual void sem() override {
+    std::string s;
+    s = id;
+    if(!st.isLabel(s)){
+      printOn(std::cout);
+      std::cout << "\n" << s << " is not a label in this scope!\n";
+      exit(1);
+    }
+    else{
+      if(!st.LabelHasStmt(s)){
+        printOn(std::cout);
+        std::cout << "\nLabel " << s << " does not correspond to a Stmt!\n";
+        exit(1);
+      }
+    }
+  }
 private:
   char* id;
 };
@@ -1693,7 +1722,13 @@ public:
     return s;
   };
   virtual void sem() override {
-    id_list->sem();
+    std::vector<char *> v;
+    std::string s;
+    v = id_list->getlist();
+    for(char* c : v){
+      s = c;
+      st.insertLabel(s, new TypeLabel());
+    }
   }
 private:
   Id_list *id_list;

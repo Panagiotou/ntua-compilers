@@ -1,6 +1,6 @@
 #include "AST.hpp"
 
-enum Types { TYPE_INTEGER, TYPE_BOOLEAN, TYPE_REAL, TYPE_ARRAY, TYPE_CHAR, TYPE_STRING, TYPE_POINTER, TYPE_PROCEDURE, TYPE_NIL, TYPE_RES };
+enum Types { TYPE_INTEGER, TYPE_BOOLEAN, TYPE_REAL, TYPE_ARRAY, TYPE_CHAR, TYPE_STRING, TYPE_POINTER, TYPE_PROCEDURE, TYPE_NIL, TYPE_RES, TYPE_LABEL };
 
 
 class Type: public AST{
@@ -55,6 +55,26 @@ public:
   virtual bool operator==(const Type &that) const override {
     std::cout << "Variable result is used uninitialized";
     exit(1);
+  }
+};
+
+class TypeLabel: public Type{
+public:
+  TypeLabel(){
+    val = TYPE_LABEL;
+    oftype = nullptr;
+    size = -1;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "TypeLabel()";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s += "TypeLabel()";
+    return s;
+  }
+  virtual bool operator==(const Type &that) const override {
+    return false;
   }
 };
 
