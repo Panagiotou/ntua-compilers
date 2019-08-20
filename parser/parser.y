@@ -195,8 +195,8 @@ formal_list:
   ;
 
 formal:
-  "var" T_id  id_list ":" type { $3->append_begin(ids.back()); ids.pop_back(); $$ = new Formal($3, $5); }
-  |T_id  id_list ":" type { $2->append_begin(ids.back()); ids.pop_back(); $$ = new Formal($2, $4); }
+  "var" T_id  id_list ":" type { $3->append_begin(ids.back()); ids.pop_back(); $$ = new Formal($3, $5, true); }
+  |T_id  id_list ":" type { $2->append_begin(ids.back()); ids.pop_back(); $$ = new Formal($2, $4, false); }
   ;
 
 type:

@@ -1,5 +1,6 @@
 program solve;
 
+ label x;
   var numberOfRings : integer;
 
   procedure hanoi (var source, target, auxiliary : array of char;

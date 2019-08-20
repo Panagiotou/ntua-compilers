@@ -690,9 +690,10 @@ private:
 
 class Formal: public AST {
 public:
-  Formal(Id_list *i_list, Type *t){
+  Formal(Id_list *i_list, Type *t, bool is){
     id_list = i_list;
     type = t;
+    isRef = is;
   }
 
   virtual void printOn(std::ostream &out) const override {
@@ -732,6 +733,7 @@ public:
 private:
   Id_list *id_list;
   Type *type;
+  bool isRef;
 };
 
 class Formal_list: public AST{
