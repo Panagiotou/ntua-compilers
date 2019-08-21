@@ -142,10 +142,14 @@
 
 program:
   "program" T_id ";" body "."{
+    st.openScope();
+    Library *l = new Library();
+    l->init(); // Initialize all built in functions and procedures
     $4->sem();
     // std::cout << "AST: " << *$1 << std::endl;
     //$1->run();
     if(DEBUG) $4->printOn(std::cout);
+    st.closeScope();
   }
   ;
 

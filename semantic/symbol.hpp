@@ -135,6 +135,8 @@ public:
   }
   void insertProcedureForward(std::string c, Type *t, Formal_list *f){ insertProcedure(c, t, f); isForwardV[c] = true; }
   void insertFunctionForward(std::string c, Type *t, Formal_list *f){ insertFunction(c, t, f); isForwardV[c] = true; }
+  void insertFunctionLib(std::string c, Type *t, Formal_list *f){ insertFunction(c, t, f); isLibV[c] = true; }
+  void insertProcedureLib(std::string c, Type *t, Formal_list *f){ insertProcedure(c, t, f); isLibV[c] = true; }
   void insertForward(std::string c, Type *t){ insert(c, t); isForwardV[c] = true; }
   void removeForward(std::string c){
     std::map<std::string, bool>::iterator it;
@@ -178,6 +180,7 @@ private:
   std::vector<std::string> localForPQueue;
   std::map<std::string, bool> isNewV;
   std::map<std::string, bool> isForwardV;
+  std::map<std::string, bool> isLibV;
   std::map<std::string , bool> procedures;
   std::map<std::string , Formal_list *> procedureFormals;
   std::map<std::string , bool> functions;
@@ -263,6 +266,9 @@ public:
   void insertForward(std::string c, Type *t){ scopes.back().insertForward(c, t); }
 
   void insertFunction(std::string c, Type *t, Formal_list *f) { scopes.back().insertFunction(c, t, f); }
+  void insertFunctionLib(std::string c, Type *t, Formal_list *f) { scopes.back().insertFunctionLib(c, t, f); }
+  void insertProcedureLib(std::string c, Type *t, Formal_list *f){ scopes.back().insertProcedureLib(c, t, f); }
+
 
   std::string getParent(){
     std::string s;

@@ -650,7 +650,12 @@ public:
   }
   void append_id(char* id) { id_list.push_back(id); }
   void append_begin(char *i) { id_list.insert(id_list.begin(), i); }
-
+  void append_idString(std::string str) {
+    char * writable = new char[str.size() + 1];
+    std::copy(str.begin(), str.end(), writable);
+    writable[str.size()] = '\0';
+    id_list.push_back(writable);
+  }
   virtual void printOn(std::ostream &out) const override {
     out << "Id_list(";
     bool first = true;
@@ -2111,4 +2116,38 @@ public:
 private:
   Local_list *local_list;
   Block *block;
+};
+
+
+
+//--------------------------- Library Functions - Procedures -------------------
+
+
+
+class Library{
+public:
+  Library(){};
+  void init(){
+    Formal *formal;
+    Formal_list *formal_list;
+    Id_list *id_list;
+
+    //function abs (n : integer) : integer;
+    formal_list = new Formal_list();
+    id_list = new Id_list();
+
+    id_list->append_idString("n");
+    formal = new Formal(id_list, new Integer(), false);
+    formal_list->append_formal(formal);
+    st.insertFunctionLib("abs", new Integer(), formal_list);
+
+    //procedure writeString (var s : array of char);
+    formal_list = new Formal_list();
+    id_list = new Id_list();
+
+    id_list->append_idString("s");
+    formal = new Formal(id_list, new Array(new Char()), true);
+    formal_list->append_formal(formal);
+    st.insertProcedureLib("writeString", new ProcedureType(), formal_list);
+  }
 };
