@@ -1,0 +1,8 @@
+program p;
+var d : ^ ^ integer;
+var e : ^ integer;
+var f , g : integer;
+begin
+new d^;
+dispose d^;
+end.

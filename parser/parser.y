@@ -6,7 +6,7 @@
 
   SymbolTable st;
   std::vector<int> rt_stack;
-  #define DEBUG false
+  #define DEBUG true
 
 %}
 
@@ -105,8 +105,6 @@
   Callr *callr;
 
   Type *type;
-  Rval *rval;
-  Lval *lval;
   int num;
   double re;
   char var;
@@ -133,10 +131,9 @@
 %type<callr> callr
 
 
-%type<expr>  expr
+%type<expr>  expr l-value r-value
 %type<type>  type
-%type<rval>  r-value
-%type<lval>  l-value
+
 
 %%
 
@@ -225,7 +222,6 @@ stmt_list:
 stmt:
   /*nothing*/ { $$ = nullptr;}
   | l-value ":=" expr { $$ = new Assign($1, $3); }
-  | expr "^" ":=" expr { $$ = new Assign($1, $4); }
   | block { $$ = $1; }
   | call { $$ = $1; }
   | "if" expr "then" stmt { $$ = new If($2, $4); }
@@ -235,13 +231,9 @@ stmt:
   | "goto" T_id { $$ = new Goto(ids.back()); ids.pop_back(); }
   | "return" { $$ = new Return(); }
   | "new" "[" expr "]" l-value { $$ = new New($3, $5); }
-  | "new" "[" expr "]" expr "^" { $$ = new New($3, $5); }
   | "new" l-value { $$ = new New($2); }
-  | "new" expr "^" { $$ = new New($2); }
   | "dispose" "[" "]" l-value { $$ = new Dispose($4, true); }
-  | "dispose" "[" "]" expr "^" { $$ = new Dispose($4, true); }
   | "dispose" l-value { $$ = new Dispose($2, false); }
-  | "dispose" expr "^" { $$ = new Dispose($2, false); }
   ;
 
 expr:
@@ -255,8 +247,8 @@ l-value:
  | T_const_string { $$ = new Conststring(constStrings.back()); constStrings.pop_back();}
  | l-value "[" expr "]" { $$ = new ArrayItem($1, $3); }
  | "(" l-value ")" { $$ = $2; }
+ | expr "^" { $$ = new Dereference($1); }
  ;
-
 
 r-value:
  T_int_const { $$ = new Constint(constInts.back()); constInts.pop_back(); }
@@ -267,7 +259,7 @@ r-value:
  | "(" r-value ")" { $$ = $2; }
  | "nil" { $$ = new NilR(); }
  | callr { $$ = $1; }
- | "@" l-value { $$ = new Reference($2); }
+ | "@" expr { $$ = new Reference($2); }
  | "not" expr { $$ = new UnOp(operators.back(), $2); operators.pop_back(); }
  | "+" expr { $$ = new UnOp(operators.back(), $2); operators.pop_back(); }
  | "-" expr { $$ = new UnOp(operators.back(), $2); operators.pop_back(); }

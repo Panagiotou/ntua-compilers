@@ -332,7 +332,7 @@ private:
 
 class ArrayItem: public Lval {
 public:
-  ArrayItem(Lval *l, Expr *e){
+  ArrayItem(Expr *l, Expr *e){
     lval = l;
     expr = e;
   }
@@ -375,13 +375,13 @@ public:
     type = lval->type->oftype;
   }
 private:
-  Lval *lval;
+  Expr *lval;
   Expr *expr;
 };
 
 class Reference: public Rval {
 public:
-  Reference(Lval *l){
+  Reference(Expr *l){
     lval = l;
   }
   virtual void printOn(std::ostream &out) const override {
@@ -408,7 +408,46 @@ public:
       type = new Pointer(lval->type);
   }
 private:
-  Lval *lval;
+  Expr *lval;
+};
+
+class Dereference: public Lval {
+public:
+  Dereference(Expr *e){
+    expr = e;
+  }
+  virtual void printOn(std::ostream &out) const override {
+    out << "Dereference(";
+    if(expr)expr->printOn(out);
+    out << ")";
+  }
+  virtual std::string getStringName() override {
+    std::string s = "";
+    s +=  "Dereference(";
+    if(expr) s+= expr->getStringName();
+    s += ")";
+    return s;
+  }
+  virtual int eval() const override {
+    std::cout << "Evaluating Dereference";
+    return -1;
+  }
+  virtual void sem() override{
+      expr->sem();
+      if(expr->type->val == TYPE_RES){
+        expr->type = st.lookup("result")->type;
+      }
+      if(!(expr->type->val == TYPE_POINTER)){
+        printOn(std::cout);
+        std::cout << "\n Can only Dereference type pointer!\n";
+        std::cout << "\n expression is of type ";
+        expr->type->printOn(std::cout);
+        exit(1);
+      }
+      type = expr->type->oftype;
+  }
+private:
+  Expr *expr;
 };
 
 
@@ -465,27 +504,19 @@ private:
 
 class Assign: public Stmt{
 public:
-  Assign(Lval *l, Expr *e){
+  Assign(Expr *l, Expr *e){
     lval = l;
     exprRight = e;
-    exprPointer = nullptr;
-  }
-  Assign(Expr *e1, Expr *e2){
-    exprPointer = e1;
-    exprRight = e2;
-    lval = nullptr;
   }
   virtual void printOn(std::ostream &out) const override {
     out << "Assign(";
     if(lval && exprRight){lval->printOn(out); out << " := "; exprRight->printOn(out);}
-    else if(exprPointer && exprRight){ exprPointer->printOn(out); out << " ^ := "; exprRight->printOn(out);}
     out << ")";
   }
   virtual std::string getStringName() override {
     std::string s = "";
     s += "Assign(";
     if(lval && exprRight){s += lval->getStringName(); s +=  " := "; s += exprRight->getStringName();}
-    else if(exprPointer && exprRight){ s += exprPointer->getStringName(); s +=  " ^ := "; exprRight->getStringName();}
     s +=  ")";
     return s;
   }
@@ -540,85 +571,10 @@ public:
         }
       }
     }
-    else if(exprPointer && exprRight){
-      // exprPointer ^ := exprRight
-      exprPointer->sem();
-      exprRight->sem();
-      if(exprRight->type->val == TYPE_NIL){
-        printOn(std::cout);
-        std::cout << "\nnil cant be dereferenced\n";
-        exit(1);
-      }
-      if(exprPointer->isResult()){
-        //result
-        funName  = st.getParent();
-        funType = st.lookup(funName)->type;
-        if(funType->val == TYPE_PROCEDURE){
-          std::cout << "Procedure " << funName << " cant return a result!\n";
-          exit(1);
-        }
-        if(st.isProcedure(funName)){
-          std::cout << "Procedure " << funName << " cant return a result!\n";
-          exit(1);
-        }
-        if(exprRight->type->val == TYPE_ARRAY){
-          std::cout << "In function " << funName << " , result can not be of type Array\n";
-          exit(1);
-        }
-        if(!(exprRight->type->val == TYPE_POINTER )){
-          std::cout << "Assign Type missmatch!\n";
-          std::cout << "Expression: ";
-          exprRight->printOn(std::cout);
-          std::cout << " must be a Pointer to some type\n";
-          exit(1);
-        }
-        if(!st.existsResult()){
-          st.insert("result", exprRight->type->oftype);
-        }
-
-        std::string funName;
-        Type *funType;
-        funName  = st.getParent();
-        funType = st.lookup(funName)->type;
-        Type *resultType = exprRight->type->oftype;
-        if(!(*resultType == *funType)){
-          std::cout << "Function " << funName.erase(0, 1) << " is of type ";
-          funType->printOn(std::cout);
-          std::cout << " but returns type ";
-          resultType->printOn(std::cout);
-          std::cout << "\n";
-          exit(1);
-        }
-        exprPointer->type = resultType;
-      }
-      else{
-        // not result
-        if(!(exprRight->type->val == TYPE_POINTER )){
-          std::cout << "Assign Type missmatch!\n";
-          std::cout << "Expression: ";
-          exprRight->printOn(std::cout);
-          std::cout << " must be a Pointer to some type\n";
-          exit(1);
-        }
-        else{
-          if(!(*exprPointer->type == *exprRight->type->oftype)){
-            std::cout << "Assign Type missmatch!\n";
-            printOn(std::cout);
-            std::cout << "\n";
-            lval->type->printOn(std::cout);
-            std::cout << " := ";
-            exprRight->type->printOn(std::cout);
-            std::cout << "\n";
-            exit(1);
-          }
-        }
-      }
-    }
   }
 private:
-  Expr *exprPointer;
   Expr *exprRight;
-  Lval *lval;
+  Expr *lval;
 };
 
 class Return: public Stmt{
@@ -753,10 +709,12 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "Formal_list(";
     bool first = true;
-    for (Formal *f : formal_list) {
-      if (!first) out << ", ";
-      first = false;
-      f->printOn(out);
+    if(!formal_list.empty()){
+      for (Formal *f : formal_list) {
+        if (!first) out << ", ";
+        first = false;
+        f->printOn(out);
+      }
     }
     out << ")";
   }
@@ -764,10 +722,12 @@ public:
     std::string s = "";
     s += "Formal_list(";
     bool first = true;
-    for (Formal *f : formal_list) {
-      if (!first) s += ", ";
-      first = false;
-      s += f->getStringName();
+    if(!formal_list.empty()){
+      for (Formal *f : formal_list) {
+        if (!first) s += ", ";
+        first = false;
+        s += f->getStringName();
+      }
     }
     s += ")";
     return s;
@@ -828,33 +788,39 @@ public:
       int i = 0;
       int argumentsExpected = 0;
       int argumentsProvided = 0;
-      for (Formal *f : formal_list) {
-        int FormalTimes;
-        FormalTimes = f->getIdList().size();
-        argumentsExpected += FormalTimes;
+      if(!formal_list.empty()){
+        for (Formal *f : formal_list) {
+          int FormalTimes;
+          FormalTimes = f->getIdList().size();
+          argumentsExpected += FormalTimes;
+        }
       }
-      argumentsProvided = expr_list->getList().size();
+      if(expr_list) argumentsProvided = expr_list->getList().size();
       if(argumentsExpected != argumentsProvided){
         std::cout << "Procedure " << s << " expected " << argumentsExpected << " arguments " << " got " << argumentsProvided;
+        std::cout << "\n";
         exit(1);
       }
-      for (Formal *f : formal_list) {
-        int FormalTimes;
-        FormalTimes = f->getIdList().size();
-        for (int j=0; j<FormalTimes; j++){
-          if(!(*f->getType() == *expr_list->getList().at(i)->getType())){
-            ERROR("Type mismatch on procedure arguments!\n");
-            std::cout << "In procedure "<< s << " arguments:\n";
-            std::cout << f->getIdList().at(j);
-            std::cout << "\n and \n";
-            expr_list->getList().at(i)->printOn(std::cout);
-            std::cout << "\nHave different types of ";
-            f->getType()->printOn(std::cout);
-            std::cout << " and ";
-            expr_list->getList().at(i)->getType()->printOn(std::cout);
-            exit(1);
+      if(!formal_list.empty()){
+        for (Formal *f : formal_list) {
+          int FormalTimes;
+          FormalTimes = f->getIdList().size();
+          for (int j=0; j<FormalTimes; j++){
+            if(!(*f->getType() == *expr_list->getList().at(i)->getType())){
+              ERROR("Type mismatch on procedure arguments!\n");
+              std::cout << "In procedure "<< s << " arguments:\n";
+              std::cout << f->getIdList().at(j);
+              std::cout << "\n and \n";
+              expr_list->getList().at(i)->printOn(std::cout);
+              std::cout << "\nHave different types of ";
+              f->getType()->printOn(std::cout);
+              std::cout << " and ";
+              expr_list->getList().at(i)->getType()->printOn(std::cout);
+              std::cout << "\n";
+              exit(1);
+            }
+            i += 1;
           }
-          i += 1;
         }
       }
     }
@@ -864,33 +830,38 @@ public:
       int i = 0;
       int argumentsExpected = 0;
       int argumentsProvided = 0;
-      for (Formal *f : formal_list) {
-        int FormalTimes;
-        FormalTimes = f->getIdList().size();
-        argumentsExpected += FormalTimes;
+      if(!formal_list.empty()){
+        for (Formal *f : formal_list) {
+          int FormalTimes;
+          FormalTimes = f->getIdList().size();
+          argumentsExpected += FormalTimes;
+        }
       }
-      argumentsProvided = expr_list->getList().size();
+      if(expr_list) argumentsProvided = expr_list->getList().size();
       if(argumentsExpected != argumentsProvided){
         std::cout << "Procedure " << s << " expected " << argumentsExpected << " arguments " << " got " << argumentsProvided;
+        std::cout << "\n";
         exit(1);
       }
-      for (Formal *f : formal_list) {
-        int FormalTimes;
-        FormalTimes = f->getIdList().size();
-        for (int j=0; j<FormalTimes; j++){
-          if(!(*f->getType() == *expr_list->getList().at(i)->getType())){
-            ERROR("Type mismatch on function arguments!\n");
-            std::cout << "In function "<< s << " arguments:\n";
-            std::cout << f->getIdList().at(j);
-            std::cout << "\n and \n";
-            expr_list->getList().at(i)->printOn(std::cout);
-            std::cout << "\nHave different types of ";
-            f->getType()->printOn(std::cout);
-            std::cout << " and ";
-            expr_list->getList().at(i)->getType()->printOn(std::cout);
-            exit(1);
+      if(!formal_list.empty()){
+        for (Formal *f : formal_list) {
+          int FormalTimes;
+          FormalTimes = f->getIdList().size();
+          for (int j=0; j<FormalTimes; j++){
+            if(!(*f->getType() == *expr_list->getList().at(i)->getType())){
+              ERROR("Type mismatch on function arguments!\n");
+              std::cout << "In function "<< s << " arguments:\n";
+              std::cout << f->getIdList().at(j);
+              std::cout << "\n and \n";
+              expr_list->getList().at(i)->printOn(std::cout);
+              std::cout << "\nHave different types of ";
+              f->getType()->printOn(std::cout);
+              std::cout << " and ";
+              expr_list->getList().at(i)->getType()->printOn(std::cout);
+              exit(1);
+            }
+            i += 1;
           }
-          i += 1;
         }
       }
     }
@@ -937,73 +908,83 @@ public:
     st.lookup(s);
     if(st.isProcedure(s)){
       std::vector<Formal *> formal_list;
-      formal_list = st.getFormalsProcedure(s)->getList();
+      formal_list = st.getFormalsProcedureAll(s)->getList();
       int i = 0;
       int argumentsExpected = 0;
       int argumentsProvided = 0;
-      for (Formal *f : formal_list) {
-        int FormalTimes;
-        FormalTimes = f->getIdList().size();
-        argumentsExpected += FormalTimes;
+      if(!formal_list.empty()){
+        for (Formal *f : formal_list) {
+          int FormalTimes;
+          FormalTimes = f->getIdList().size();
+          argumentsExpected += FormalTimes;
+        }
       }
-      argumentsProvided = expr_list->getList().size();
+      if(expr_list) argumentsProvided = expr_list->getList().size();
       if(argumentsExpected != argumentsProvided){
         std::cout << "Procedure " << s << " expected " << argumentsExpected << " arguments " << " got " << argumentsProvided;
+        std::cout << "\n";
         exit(1);
       }
-      for (Formal *f : formal_list) {
-        int FormalTimes;
-        FormalTimes = f->getIdList().size();
-        for (int j=0; j<FormalTimes; j++){
-          if(!(*f->getType() == *expr_list->getList().at(i)->getType())){
-            ERROR("Type mismatch on procedure arguments!\n");
-            std::cout << "In procedure "<< s << " arguments:\n";
-            std::cout << f->getIdList().at(j);
-            std::cout << "\n and \n";
-            expr_list->getList().at(i)->printOn(std::cout);
-            std::cout << "\nHave different types of ";
-            f->getType()->printOn(std::cout);
-            std::cout << " and ";
-            expr_list->getList().at(i)->getType()->printOn(std::cout);
-            exit(1);
+      if(!formal_list.empty()){
+        for (Formal *f : formal_list) {
+          int FormalTimes;
+          FormalTimes = f->getIdList().size();
+          for (int j=0; j<FormalTimes; j++){
+            if(!(*f->getType() == *expr_list->getList().at(i)->getType())){
+              ERROR("Type mismatch on procedure arguments!\n");
+              std::cout << "In procedure "<< s << " arguments:\n";
+              std::cout << f->getIdList().at(j);
+              std::cout << "\n and \n";
+              expr_list->getList().at(i)->printOn(std::cout);
+              std::cout << "\nHave different types of ";
+              f->getType()->printOn(std::cout);
+              std::cout << " and ";
+              expr_list->getList().at(i)->getType()->printOn(std::cout);
+              exit(1);
+            }
+            i += 1;
           }
-          i += 1;
         }
       }
     }
     else if(st.isFunction(s)){
       std::vector<Formal *> formal_list;
-      formal_list = st.getFormalsFunction(s)->getList();
+      formal_list = st.getFormalsFunctionAll(s)->getList();
       int i = 0;
       int argumentsExpected = 0;
       int argumentsProvided = 0;
-      for (Formal *f : formal_list) {
-        int FormalTimes;
-        FormalTimes = f->getIdList().size();
-        argumentsExpected += FormalTimes;
+      if(!formal_list.empty()){
+        for (Formal *f : formal_list) {
+          int FormalTimes;
+          FormalTimes = f->getIdList().size();
+          argumentsExpected += FormalTimes;
+        }
       }
-      argumentsProvided = expr_list->getList().size();
+      if(expr_list) argumentsProvided = expr_list->getList().size();
       if(argumentsExpected != argumentsProvided){
         std::cout << "Procedure " << s << " expected " << argumentsExpected << " arguments " << " got " << argumentsProvided;
+        std::cout << "\n";
         exit(1);
       }
-      for (Formal *f : formal_list) {
-        int FormalTimes;
-        FormalTimes = f->getIdList().size();
-        for (int j=0; j<FormalTimes; j++){
-          if(!(*f->getType() == *expr_list->getList().at(i)->getType())){
-            ERROR("Type mismatch on function arguments!\n");
-            std::cout << "In function "<< s << " arguments:\n";
-            std::cout << f->getIdList().at(j);
-            std::cout << "\n and \n";
-            expr_list->getList().at(i)->printOn(std::cout);
-            std::cout << "\nHave different types of ";
-            f->getType()->printOn(std::cout);
-            std::cout << " and ";
-            expr_list->getList().at(i)->getType()->printOn(std::cout);
-            exit(1);
+      if(!formal_list.empty()){
+        for (Formal *f : formal_list) {
+          int FormalTimes;
+          FormalTimes = f->getIdList().size();
+          for (int j=0; j<FormalTimes; j++){
+            if(!(*f->getType() == *expr_list->getList().at(i)->getType())){
+              ERROR("Type mismatch on function arguments!\n");
+              std::cout << "In function "<< s << " arguments:\n";
+              std::cout << f->getIdList().at(j);
+              std::cout << "\n and \n";
+              expr_list->getList().at(i)->printOn(std::cout);
+              std::cout << "\nHave different types of ";
+              f->getType()->printOn(std::cout);
+              std::cout << " and ";
+              expr_list->getList().at(i)->getType()->printOn(std::cout);
+              exit(1);
+            }
+            i += 1;
           }
-          i += 1;
         }
       }
     }
@@ -1015,30 +996,17 @@ private:
 
 class New: public Stmt{
 public:
-  New(Lval *l){
+  New(Expr *l){
     lval = l;
-    exprPointer = nullptr;
     exprBrackets = nullptr;
   }
-  New(Expr *e){
-    exprPointer = e;
-    lval = nullptr;
-    exprBrackets = nullptr;
-  }
-  New(Expr *e1, Expr *e2){
-    exprBrackets = e1;
-    exprPointer = e2;
-    lval = nullptr;
-  }
-  New(Expr *e, Lval *l){
+  New(Expr *e, Expr *l){
     exprBrackets = e;
     lval = l;
-    exprPointer = nullptr;
   }
   virtual void printOn(std::ostream &out) const override {
     out << "New(";
     if(lval) lval->printOn(out);
-    if(exprPointer) exprPointer->printOn(out);
     if(exprBrackets) exprBrackets->printOn(out);
     out << ")";
   }
@@ -1046,7 +1014,6 @@ public:
     std::string s = "";
     s += "New(";
     if(lval) s += lval->getStringName();
-    if(exprPointer) s+=exprPointer->getStringName();
     if(exprBrackets) s+= exprBrackets->getStringName();
     s += ")";
     return s;
@@ -1055,7 +1022,7 @@ public:
     std::cout << "Running New";
   }
   virtual void sem() override {
-    if(lval && !exprPointer && exprBrackets){
+    if(lval && exprBrackets){
       // "new" "[" expr "]" l-value
       lval->sem();
       exprBrackets->sem();
@@ -1090,74 +1057,6 @@ public:
       }
       st.makeNew(lval->getStringName());
     }
-    else if(!lval && exprPointer && exprBrackets){
-      // "new" "[" expr "]" expr "^"
-      exprPointer->sem();
-      exprBrackets->sem();
-      if(exprPointer->type->val == TYPE_RES){
-        exprPointer->type = st.lookup("result")->type;
-      }
-      if(exprBrackets->type->val == TYPE_RES){
-        exprBrackets->type = st.lookup("result")->type;
-      }
-      if(exprPointer->type->val != TYPE_POINTER){
-        printOn(std::cout);
-        std::cout << "\nIn expression new [expr] expr ^, expr must be a pointer but is of type ";
-        exprPointer->type->printOn(std::cout);
-        std::cout << "\n";
-        exit(1);
-      }
-      else{
-        if(exprPointer->type->oftype->val != TYPE_POINTER){
-          printOn(std::cout);
-          std::cout << "\nIn expression new [expr] expr ^, (expr ^) must be a pointer, but is of type ";
-          exprPointer->type->oftype->printOn(std::cout);
-          std::cout << "\n";
-          exit(1);
-        }
-        else{
-          if(exprPointer->type->oftype->oftype->val != TYPE_ARRAY){
-            printOn(std::cout);
-            std::cout << "\nIn expression new [expr] expr ^, (expr ^) must be a pointer to array but is a pointer to ";
-            exprPointer->type->oftype->oftype->printOn(std::cout);
-            std::cout << "\n";
-            exit(1);
-          }
-        }
-      }
-      if(exprBrackets->type->val != TYPE_INTEGER){
-        printOn(std::cout);
-        std::cout << "\nIn expression new [expr] l-value, expr must be of type integer, but it is of type ";
-        exprBrackets->type->oftype->printOn(std::cout);
-        std::cout << "\n";
-        exit(1);
-      }
-      st.makeNew(exprPointer->getStringName());
-    }
-    else if(!lval && exprPointer && !exprBrackets){
-      // "new" expr "^"
-      exprPointer->sem();
-      if(exprPointer->type->val == TYPE_RES){
-        exprPointer->type = st.lookup("result")->type;
-      }
-      if(exprPointer->type->val != TYPE_POINTER){
-        printOn(std::cout);
-        std::cout << "\nIn expression new expr ^, expr must be a pointer but is of type ";
-        exprPointer->type->printOn(std::cout);
-        std::cout << "\n";
-        exit(1);
-      }
-      else{
-        if(exprPointer->type->oftype->val != TYPE_POINTER){
-          printOn(std::cout);
-          std::cout << "\nIn expression new expr ^, (expr ^) must be a pointer but is of type ";
-          exprPointer->type->oftype->printOn(std::cout);
-          std::cout << "\n";
-          exit(1);
-        }
-      }
-      st.makeNew(exprPointer->getStringName());
-    }
     else{
       // "new" l-value
       lval->sem();
@@ -1173,11 +1072,9 @@ public:
       }
       st.makeNew(lval->getStringName());
     }
-
   }
 private:
-  Lval *lval;
-  Expr *exprPointer;
+  Expr *lval;
   Expr *exprBrackets;
 };
 
@@ -1423,27 +1320,19 @@ private:
 
 class Dispose: public Stmt{
 public:
-  Dispose(Lval *l, bool b){
+  Dispose(Expr *l, bool b){
     lval = l;
-    expr = nullptr;
-    isBracket = b;
-  }
-  Dispose(Expr *e, bool b){
-    expr = e;
-    lval = nullptr;
     isBracket = b;
   }
   virtual void printOn(std::ostream &out) const override {
     out << "Dispose(";
     if(lval) lval->printOn(out);
-    else expr->printOn(out);
     out << ")";
   }
   virtual std::string getStringName() override {
     std::string s = "";
     s += "Dispose(";
     if(lval) s += lval->getStringName();
-    else s += expr->getStringName();
     s += ")";
     return s;
   }
@@ -1451,7 +1340,7 @@ public:
     std::cout << "Running Dispose";
   }
   virtual void sem() override {
-    if(lval && !expr && !isBracket){
+    if(lval && !isBracket){
       // dispose l-value
       lval->sem();
       if(lval->type->val == TYPE_RES){
@@ -1471,7 +1360,7 @@ public:
       }
       lval = new NilL();
     }
-    else if(lval && !expr && isBracket){
+    else{
       // dispose [] l-value
       lval->sem();
       if(lval->type->val == TYPE_RES){
@@ -1498,78 +1387,10 @@ public:
       }
       lval = new NilL();
     }
-    else if(!lval && expr && !isBracket){
-      // dispose expr "^"
-      expr->sem();
-      if(expr->type->val == TYPE_RES){
-        expr->type = st.lookup("result")->type;
-      }
-      if(expr->type->val != TYPE_POINTER){
-        printOn(std::cout);
-        std::cout << "\nIn expression dispose expr ^, expr must be a pointer but is of type ";
-        expr->type->printOn(std::cout);
-        std::cout << "\n";
-        exit(1);
-      }
-      else{
-        if(!st.isNew(expr->getStringName())){
-          printOn(std::cout);
-          std::cout << "\nIn expression dispose expr ^, expr ^ must have had been created by new expr ^\n";
-          exit(1);
-        }
-        if(expr->type->oftype->val != TYPE_POINTER){
-          printOn(std::cout);
-          std::cout << "\nIn expression disposes expr ^, (expr ^) must be a pointer, but is of type ";
-          expr->type->oftype->printOn(std::cout);
-          std::cout << "\n";
-          exit(1);
-        }
-        expr = new NilL();
-      }
-    }
-    else{
-      // dispose [] expr "^"
-      expr->sem();
-      if(expr->type->val == TYPE_RES){
-        expr->type = st.lookup("result")->type;
-      }
-      if(expr->type->val != TYPE_POINTER){
-        printOn(std::cout);
-        std::cout << "\nIn expression dispose [] expr ^, expr must be a pointer but is of type ";
-        expr->type->printOn(std::cout);
-        std::cout << "\n";
-        exit(1);
-      }
-      else{
-        if(!st.isNew(expr->getStringName())){
-          printOn(std::cout);
-          std::cout << "\nIn expression dispose [] expr ^, [] expr ^ must have had been created by new [] expr ^\n";
-          exit(1);
-        }
-        if(expr->type->oftype->val != TYPE_POINTER){
-          printOn(std::cout);
-          std::cout << "\nIn expression dispose [] expr ^, (expr ^) must be a pointer, but is of type ";
-          expr->type->oftype->printOn(std::cout);
-          std::cout << "\n";
-          exit(1);
-        }
-        else{
-          if(expr->type->oftype->oftype->val != TYPE_ARRAY){
-            printOn(std::cout);
-            std::cout << "\nIn expression dispose [] expr ^, (expr ^) must be a pointer to array but is a pointer to ";
-            expr->type->oftype->oftype->printOn(std::cout);
-            std::cout << "\n";
-            exit(1);
-          }
-        }
-        expr = new NilL();
-      }
-    }
 }
 
 private:
-  Lval *lval;
-  Expr *expr;
+  Expr *lval;
   bool isBracket;
 };
 
@@ -2081,7 +1902,7 @@ public:
     block->sem();
     std::string funName;
     funName = st.getParent();
-    if(!st.existsResult() && st.isFunction(funName)){
+    if(!st.existsResult() && st.isFunction(funName) && !st.isLib(funName)){
       std::cout << "Function " << funName << " does not have a result\n";
       exit(1);
     }
@@ -2132,14 +1953,43 @@ public:
     Formal_list *formal_list;
     Id_list *id_list;
 
-    //function abs (n : integer) : integer;
+    //Output-Input
+
+    //procedure writeInteger (n : integer);
     formal_list = new Formal_list();
     id_list = new Id_list();
 
     id_list->append_idString("n");
     formal = new Formal(id_list, new Integer(), false);
     formal_list->append_formal(formal);
-    st.insertFunctionLib("abs", new Integer(), formal_list);
+    st.insertProcedureLib("writeInteger", new ProcedureType(), formal_list);
+
+    //procedure writeBoolean (b : boolean);
+    formal_list = new Formal_list();
+    id_list = new Id_list();
+
+    id_list->append_idString("b");
+    formal = new Formal(id_list, new Boolean(), false);
+    formal_list->append_formal(formal);
+    st.insertProcedureLib("writeBoolean", new ProcedureType(), formal_list);
+
+    //procedure writeChar (c : char);
+    formal_list = new Formal_list();
+    id_list = new Id_list();
+
+    id_list->append_idString("c");
+    formal = new Formal(id_list, new Char(), false);
+    formal_list->append_formal(formal);
+    st.insertProcedureLib("writeChar", new ProcedureType(), formal_list);
+
+    //procedure writeReal (r : real);
+    formal_list = new Formal_list();
+    id_list = new Id_list();
+
+    id_list->append_idString("r");
+    formal = new Formal(id_list, new Real(), false);
+    formal_list->append_formal(formal);
+    st.insertProcedureLib("writeReal", new ProcedureType(), formal_list);
 
     //procedure writeString (var s : array of char);
     formal_list = new Formal_list();
@@ -2149,5 +1999,155 @@ public:
     formal = new Formal(id_list, new Array(new Char()), true);
     formal_list->append_formal(formal);
     st.insertProcedureLib("writeString", new ProcedureType(), formal_list);
+
+    //function readInteger () : integer;
+    formal_list = new Formal_list();
+    st.insertFunctionLib("readInteger", new Integer(), formal_list);
+
+    //function readBoolean () : boolean;
+    formal_list = new Formal_list();
+    st.insertFunctionLib("readBoolean", new Boolean(), formal_list);
+
+    //function readChar () : char;
+    formal_list = new Formal_list();
+    st.insertFunctionLib("readChar", new Char(), formal_list);
+
+    //function readReal () : real;
+    formal_list = new Formal_list();
+    st.insertFunctionLib("readReal", new Real(), formal_list);
+
+    //procedure readString (size : integer; var s : array of char);
+    formal_list = new Formal_list();
+    id_list = new Id_list();
+    id_list->append_idString("s");
+
+    formal = new Formal(id_list, new Integer(), false);
+    formal_list->append_formal(formal);
+    id_list = new Id_list();
+    id_list->append_idString("size");
+    formal = new Formal(id_list, new Array(new Char()), true);
+    formal_list->append_formal(formal);
+    st.insertProcedureLib("readString", new ProcedureType(), formal_list);
+
+    //function abs (n : integer) : integer;
+    formal_list = new Formal_list();
+    id_list = new Id_list();
+
+    id_list->append_idString("n");
+    formal = new Formal(id_list, new Integer(), false);
+    formal_list->append_formal(formal);
+    st.insertFunctionLib("abs", new Integer(), formal_list);
+
+    //function fabs (r : real) : real;
+    formal_list = new Formal_list();
+    id_list = new Id_list();
+
+    id_list->append_idString("r");
+    formal = new Formal(id_list, new Real(), false);
+    formal_list->append_formal(formal);
+    st.insertFunctionLib("fabs", new Real(), formal_list);
+
+    //function sqrt (r : real) : real;
+    formal_list = new Formal_list();
+    id_list = new Id_list();
+
+    id_list->append_idString("r");
+    formal = new Formal(id_list, new Real(), false);
+    formal_list->append_formal(formal);
+    st.insertFunctionLib("sqrt", new Real(), formal_list);
+
+    //function sin (r : real) : real;
+    formal_list = new Formal_list();
+    id_list = new Id_list();
+
+    id_list->append_idString("r");
+    formal = new Formal(id_list, new Real(), false);
+    formal_list->append_formal(formal);
+    st.insertFunctionLib("sin", new Real(), formal_list);
+
+    //function cos (r : real) : real;
+    formal_list = new Formal_list();
+    id_list = new Id_list();
+
+    id_list->append_idString("r");
+    formal = new Formal(id_list, new Real(), false);
+    formal_list->append_formal(formal);
+    st.insertFunctionLib("cos", new Real(), formal_list);
+
+    //function tan (r : real) : real;
+    formal_list = new Formal_list();
+    id_list = new Id_list();
+
+    id_list->append_idString("r");
+    formal = new Formal(id_list, new Real(), false);
+    formal_list->append_formal(formal);
+    st.insertFunctionLib("tan", new Real(), formal_list);
+
+    //function arctan (r : real) : real;
+    formal_list = new Formal_list();
+    id_list = new Id_list();
+
+    id_list->append_idString("r");
+    formal = new Formal(id_list, new Real(), false);
+    formal_list->append_formal(formal);
+    st.insertFunctionLib("arctan", new Real(), formal_list);
+
+    //function exp (r : real) : real;
+    formal_list = new Formal_list();
+    id_list = new Id_list();
+
+    id_list->append_idString("r");
+    formal = new Formal(id_list, new Real(), false);
+    formal_list->append_formal(formal);
+    st.insertFunctionLib("exp", new Real(), formal_list);
+
+    //function ln (r : real) : real;
+    formal_list = new Formal_list();
+    id_list = new Id_list();
+
+    id_list->append_idString("r");
+    formal = new Formal(id_list, new Real(), false);
+    formal_list->append_formal(formal);
+    st.insertFunctionLib("ln", new Real(), formal_list);
+
+    //function pi () : real;
+    formal_list = new Formal_list();
+    st.insertFunctionLib("pi", new Real(), formal_list);
+
+    //function trunc (r : real) : integer;
+    formal_list = new Formal_list();
+    id_list = new Id_list();
+
+    id_list->append_idString("r");
+    formal = new Formal(id_list, new Real(), false);
+    formal_list->append_formal(formal);
+    st.insertFunctionLib("trunc", new Integer(), formal_list);
+
+    //function round (r : real) : integer;
+    formal_list = new Formal_list();
+    id_list = new Id_list();
+
+    id_list->append_idString("r");
+    formal = new Formal(id_list, new Real(), false);
+    formal_list->append_formal(formal);
+    st.insertFunctionLib("round", new Integer(), formal_list);
+
+    //function ord (c : char) : integer;
+    formal_list = new Formal_list();
+    id_list = new Id_list();
+
+    id_list->append_idString("c");
+    formal = new Formal(id_list, new Char(), false);
+    formal_list->append_formal(formal);
+    st.insertFunctionLib("ord", new Integer(), formal_list);
+
+    //function chr (n : integer) : char;
+    formal_list = new Formal_list();
+    id_list = new Id_list();
+
+    id_list->append_idString("n");
+    formal = new Formal(id_list, new Integer(), false);
+    formal_list->append_formal(formal);
+    st.insertFunctionLib("chr", new Char(), formal_list);
   }
 };

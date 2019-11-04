@@ -66,13 +66,15 @@ public:
     ++size;
     procedures[c] = true;
     procedureFormals[c] = f;
-    functionFormals[c] = nullptr;
     label[c] = false;
     localForPQueue.push_back(c);
 
   }
   bool isProcedure(std::string c){
     return procedures[c];
+  }
+  bool isLib(std::string c){
+    return isLibV[c];
   }
   void insertFunction(std::string c, Type *t, Formal_list *f) {
     if (locals.find(c) != locals.end()) {
@@ -83,10 +85,8 @@ public:
     ++size;
     functions[c] = true;
     functionFormals[c] = f;
-    procedureFormals[c] = nullptr;
     label[c] = false;
     localForPQueue.push_back(c);
-
   }
   void printParents(){
     std::cout << "Parents\n";
@@ -258,6 +258,12 @@ public:
   bool isFunction(std::string s){
     for (auto i = scopes.rbegin(); i != scopes.rend(); ++i) {
       if(i->exists(s)) return i->isFunction(s);
+    }
+    return false;
+  }
+  bool isLib(std::string s){
+    for (auto i = scopes.rbegin(); i != scopes.rend(); ++i) {
+      if(i->exists(s)) return i->isLib(s);
     }
     return false;
   }

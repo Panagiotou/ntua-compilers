@@ -2,9 +2,14 @@ program solve;
 
  label x;
   var numberOfRings : integer;
+  var r : real;
+  var b : boolean;
+  var c : char;
+  var k : ^ integer;
+  var table : array of char;
 
-  procedure hanoi (var source, target, auxiliary : array of char;
-                       rings : integer);
+  function hanoi (var source, target, auxiliary : array of char;
+                       rings : integer):  integer;
 
       forward procedure move(var source, target : array of char);
 
@@ -19,14 +24,22 @@ program solve;
        end;
 
   begin
+    k := @ 4;
+    result := k ^;
     move1(auxiliary, auxiliary)
   end;
 
 begin
   x : numberOfRings := 1;
   (*writeString("Please,givethenumberofrings:");*)
-  (*numberOfRings := readInteger();*)
+  numberOfRings := readInteger();
   writeString("\nHereisthesolution:\n\n");
+  writeInteger(numberOfRings);
+  writeBoolean(b);
+  writeChar(c);
+  writeReal(r);
+  readString(numberOfRings, table);
+
   hanoi("left","right","middle",numberOfRings);
   goto x
 end.

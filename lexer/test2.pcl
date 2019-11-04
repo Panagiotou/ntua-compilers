@@ -1,0 +1,14 @@
+program p;
+var basicbitch : array [10] of array [10] of integer;
+var testy : array [10] of ^ array [10] of integer;
+var testo : ^ array [10] of integer;
+var testa : array [10] of ^ integer;
+var axax : integer;
+var testb : integer;
+begin
+axax := 4;
+basicbitch[4][5] := 5 + 4 + 15 + 12;
+testy[4]^[5] := 2;
+testo^[4] := 2;
+testa[4] := @axax
+end.
