@@ -282,7 +282,7 @@ public:
       s = scopes.back().getParentFunction();
       return s;
     }
-    if(scopes.size()-2 >= 0){
+    if(scopes.size() >= 2){
       s = scopes[scopes.size() - 2].getParentFunction();
       return s;
     }

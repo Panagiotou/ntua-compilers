@@ -1,7 +1,8 @@
 .PHONY: clean distclean default
 
 CXX=c++
-CXXFLAGS=-Wall -std=c++11
+CXXFLAGS=-Wall -std=c++11 `llvm-config --cxxflags`
+LDFLAGS=`llvm-config --ldflags --system-libs --libs all`
 
 default: pcl
 

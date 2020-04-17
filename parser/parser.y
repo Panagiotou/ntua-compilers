@@ -6,7 +6,7 @@
 
   SymbolTable st;
   std::vector<int> rt_stack;
-  #define DEBUG true
+  #define DEBUGPARSER true
 
 %}
 
@@ -145,7 +145,7 @@ program:
     $4->sem();
     // std::cout << "AST: " << *$1 << std::endl;
     //$1->run();
-    if(DEBUG) $4->printOn(std::cout);
+    if(DEBUGPARSER) $4->printOn(std::cout);
     st.closeScope();
   }
   ;
@@ -302,7 +302,7 @@ int main() {
 
   int result = yyparse();
   bool first = true;
-  if(DEBUG){
+  if(DEBUGPARSER){
     std::cout << "\n\nRemaining ids: ";
     for (char* id : ids) {
       if (!first) std::cout << ", ";
