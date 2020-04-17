@@ -8,6 +8,20 @@
   std::vector<int> rt_stack;
   #define DEBUGPARSER true
 
+  LLVMContext AST::TheContext;
+  IRBuilder<> AST::Builder(TheContext);
+  std::unique_ptr<Module> AST::TheModule;
+  std::unique_ptr<legacy::FunctionPassManager> AST::TheFPM;
+
+  GlobalVariable *AST::TheVars;
+  GlobalVariable *AST::TheNL;
+  Function *AST::TheWriteInteger;
+  Function *AST::TheWriteString;
+
+  Type *AST::i8 = IntegerType::get(TheContext, 8);
+  Type *AST::i32 = IntegerType::get(TheContext, 32);
+  Type *AST::i64 = IntegerType::get(TheContext, 64);
+
 %}
 
 %define parse.error verbose
@@ -104,7 +118,7 @@
   Call *call;
   Callr *callr;
 
-  Type *type;
+  OurType *type;
   int num;
   double re;
   char var;
@@ -143,6 +157,7 @@ program:
     Library *l = new Library();
     l->init(); // Initialize all built in functions and procedures
     $4->sem();
+    $4->llvm_compile_and_dump();
     // std::cout << "AST: " << *$1 << std::endl;
     //$1->run();
     if(DEBUGPARSER) $4->printOn(std::cout);
@@ -186,8 +201,8 @@ decl:
 header:
  "procedure" T_id "(" formal formal_list  ")" { $5->append_begin($4); $$ = new Procedure(ids.back(), $5); ids.pop_back(); }
  | "procedure" T_id "(" ")" { $$ = new Procedure(ids.back()); ids.pop_back(); }
- | "function" T_id "(" formal formal_list  ")" ":" type { $5->append_begin($4); $$ = new Function(ids.back(), $8, $5); ids.pop_back();}
- | "function" T_id "(" ")" ":" type { $$ = new Function(ids.back(), $6); ids.pop_back();}
+ | "function" T_id "(" formal formal_list  ")" ":" type { $5->append_begin($4); $$ = new OurFunction(ids.back(), $8, $5); ids.pop_back();}
+ | "function" T_id "(" ")" ":" type { $$ = new OurFunction(ids.back(), $6); ids.pop_back();}
  ;
 
 formal_list:

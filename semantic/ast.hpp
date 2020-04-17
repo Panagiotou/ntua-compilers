@@ -14,7 +14,7 @@
 #include <llvm/Transforms/Scalar.h>
 #include <llvm/Transforms/Scalar/GVN.h>
 
-// using namespace llvm;
+using namespace llvm;
 
 inline std::ostream& operator<<(std::ostream &out, Types t) {
   switch (t) {
@@ -45,7 +45,7 @@ inline std::ostream& operator<<(std::ostream &out, const AST &t) {
 class Expr: public AST {
 public:
   virtual int eval() const = 0;
-  bool type_check(Type *t) {
+  bool type_check(OurType *t) {
 
     if (type == t) {
       return 1;
@@ -54,13 +54,15 @@ public:
       return 0;
     }
   }
-  Type *getType(){
+  OurType *getType(){
     return type;
   }
-  Type *type;
+  OurType *type;
   virtual bool isResult(){
       return false;
   }
+  virtual Value* compile() const override { return 0;}
+
   bool isNew;
 };
 
@@ -100,6 +102,8 @@ public:
   virtual void sem() override{
     for (Expr *e : expr_list) e->sem();
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
    std::vector<Expr *> expr_list;
 };
@@ -112,6 +116,8 @@ public:
     std::cout << "Evaluating Rval";
     return -1;
   }
+  virtual Value* compile() const override { return 0;}
+
 };
 class Lval: public Expr {
 public:
@@ -119,6 +125,8 @@ public:
     std::cout << "Evaluating Lval";
     return -1;
   }
+  virtual Value* compile() const override { return 0;}
+
 };
 
 class Result: public Lval {
@@ -143,6 +151,8 @@ public:
       return true;
   }
   virtual void sem() override{  }
+  virtual Value* compile() const override { return 0;}
+
 private:
   std::string var;
   int offset;
@@ -253,6 +263,8 @@ public:
     if(! strcmp(op, "and")) return left->eval() && right->eval();
     return 0;  // this will never be reached.
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
   Expr *left;
   char *op;
@@ -306,6 +318,8 @@ public:
     if(! strcmp(op, "not")) return !right->eval();
     return 0;  // this will never be reached.
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
   char *op;
   Expr *right;
@@ -333,6 +347,8 @@ public:
     std::string s = var;
     type = st.lookup(s)->type;
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
   char* var;
   int offset;
@@ -383,6 +399,8 @@ public:
     }
     type = lval->type->oftype;
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
   Expr *lval;
   Expr *expr;
@@ -416,6 +434,8 @@ public:
       }
       type = new Pointer(lval->type);
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
   Expr *lval;
 };
@@ -455,6 +475,8 @@ public:
       }
       type = expr->type->oftype;
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
   Expr *expr;
 };
@@ -506,6 +528,8 @@ public:
   virtual void run() const override {
     std::cout << "Running IdLabel";
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
   char* id;
   Stmt *stmt;
@@ -534,7 +558,7 @@ public:
   }
   virtual void sem() override{
     std::string funName;
-    Type *funType;
+    OurType *funType;
     if(lval && exprRight){
       lval->sem();
       exprRight->sem();
@@ -550,7 +574,7 @@ public:
           std::cout << "Procedure " << funName << " cant return a result!\n";
           exit(1);
         }
-        Type *resultType = exprRight->type;
+        OurType *resultType = exprRight->type;
         if(resultType->val == TYPE_ARRAY){
           std::cout << "In function " << funName << " , result can not be of type Array\n";
           exit(1);
@@ -581,6 +605,8 @@ public:
       }
     }
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
   Expr *exprRight;
   Expr *lval;
@@ -602,6 +628,8 @@ public:
   virtual void run() const override {
     std::cout << "Running Return";
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
 };
 
@@ -654,13 +682,15 @@ public:
   std::vector<char* > charList(){
     return id_list;
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
    std::vector<char* > id_list;
 };
 
 class Formal: public AST {
 public:
-  Formal(Id_list *i_list, Type *t, bool is){
+  Formal(Id_list *i_list, OurType *t, bool is){
     id_list = i_list;
     type = t;
     isRef = is;
@@ -694,15 +724,17 @@ public:
      }
    }
  }
- Type *getType(){
+ OurType *getType(){
    return type;
  }
  std::vector<char* > getIdList(){
    return id_list->charList();
  }
+ virtual Value* compile() const override { return 0;}
+
 private:
   Id_list *id_list;
-  Type *type;
+  OurType *type;
   bool isRef;
 };
 
@@ -750,6 +782,8 @@ public:
   virtual void sem() override{
     for (Formal *f : formal_list) f->sem();
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
    std::vector<Formal *> formal_list;
 };
@@ -875,6 +909,7 @@ public:
       }
     }
   }
+  virtual Value* compile() const override { return 0;}
 
 private:
   char* id;
@@ -998,6 +1033,8 @@ public:
       }
     }
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
   char *id;
   Expr_list *expr_list;
@@ -1082,6 +1119,8 @@ public:
       st.makeNew(lval->getStringName());
     }
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
   Expr *lval;
   Expr *exprBrackets;
@@ -1125,6 +1164,8 @@ public:
       }
     }
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
   char* id;
 };
@@ -1165,6 +1206,9 @@ public:
   virtual void sem() override {
     for (Stmt *s : stmt_list) s->sem();
   }
+  virtual Value* compile() const override { return 0;}
+
+
 private:
    std::vector<Stmt *> stmt_list;
 };
@@ -1192,6 +1236,8 @@ public:
   virtual int get(){
     return con;
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
   int con;
 };
@@ -1214,6 +1260,8 @@ public:
   }
   virtual int eval() const override { return 0; } //wrong
   // virtual void sem() override { type = new Char(); }
+  virtual Value* compile() const override { return 0;}
+
 private:
   char con;
 };
@@ -1234,6 +1282,8 @@ public:
   }
   virtual int eval() const override { return 0; } //wrong
   // virtual void sem() override { type = new String(); }
+  virtual Value* compile() const override { return 0;}
+
 private:
   char *con;
 };
@@ -1254,6 +1304,8 @@ public:
   }
   virtual int eval() const override { return 0; } //wrong
   // virtual void sem() override { type = new Real(); }
+  virtual Value* compile() const override { return 0;}
+
 private:
   double con;
 };
@@ -1285,6 +1337,8 @@ public:
   }
   virtual int eval() const override { return 0; } //wrong
   // virtual void sem() override { type = new Boolean(); }
+  virtual Value* compile() const override { return 0;}
+
 private:
   bool con;
 };
@@ -1304,6 +1358,8 @@ public:
     return s;
   }
   virtual int eval() const override { return 0; } //wrong
+  virtual Value* compile() const override { return 0;}
+
 private:
   char *con;
 };
@@ -1323,6 +1379,8 @@ public:
     return s;
   }
   virtual int eval() const override { return 0; } //wrong
+  virtual Value* compile() const override { return 0;}
+
 private:
   char *con;
 };
@@ -1398,6 +1456,8 @@ public:
     }
 }
 
+virtual Value* compile() const override { return 0;}
+
 private:
   Expr *lval;
   bool isBracket;
@@ -1443,6 +1503,8 @@ public:
     else if (stmt2 != nullptr)
       stmt2->run();
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
   Expr *cond;
   Stmt *stmt1;
@@ -1486,6 +1548,8 @@ public:
       stmt->run();
     }
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
   Expr *expr;
   Stmt *stmt;
@@ -1525,6 +1589,8 @@ public:
 virtual void run() const override {
   std::cout << "Running block";
 }
+virtual Value* compile() const override { return 0;}
+
 private:
   Stmt_list *stmt_list;
 };
@@ -1532,7 +1598,7 @@ private:
 class Header: public AST{
 public:
   virtual char *getFunctionName(){return nullptr;};
-  virtual Type *getFunctionType(){return nullptr;};
+  virtual OurType *getFunctionType(){return nullptr;};
 };
 
 
@@ -1567,13 +1633,15 @@ public:
       st.insertLabel(s, new TypeLabel());
     }
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
   Id_list *id_list;
 };
 
 class Decl: public AST {
 public:
-  Decl(Id_list *i_list, Type *t){
+  Decl(Id_list *i_list, OurType *t){
     id_list = i_list;
     type = t;
   }
@@ -1598,9 +1666,11 @@ public:
       st.insert(var, type);
     }
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
   Id_list *id_list;
-  Type *type;
+  OurType *type;
 };
 
 class Decl_list: public AST{
@@ -1637,6 +1707,8 @@ public:
   virtual void sem() override {
     for (Decl *d : decl_list) d->sem();
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
    std::vector<Decl *> decl_list;
 };
@@ -1692,23 +1764,25 @@ public:
       st.insertProcedure(s, new ProcedureType(), formal_list);
     }
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
   char* id;
   Formal_list *formal_list;
 };
 
-class Function: public Header{
+class OurFunction: public Header{
 public:
-  Function(char* i, Type *t, Formal_list *f = nullptr){
+  OurFunction(char* i, OurType *t, Formal_list *f = nullptr){
     id = i;
     type = t;
     formal_list = f;
   }
-  ~Function(){
+  ~OurFunction(){
     delete id; delete formal_list;
   }
   virtual void printOn(std::ostream &out) const override {
-    out << "Function(";
+    out << "OurFunction(";
     out << id << " ";
     formal_list->printOn(out);
     type->printOn(out);
@@ -1716,7 +1790,7 @@ public:
   }
   virtual std::string getStringName() override {
     std::string s = "";
-    s += "Function(";
+    s += "OurFunction(";
     std::string var;
     var = id;
     s += var + " ";
@@ -1757,12 +1831,14 @@ public:
   virtual char *getFunctionName() override{
     return id;
   }
-  virtual Type *getFunctionType() override{
+  virtual OurType *getFunctionType() override{
     return type;
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
   char* id;
-  Type *type;
+  OurType *type;
   Formal_list *formal_list;
 };
 
@@ -1846,9 +1922,11 @@ public:
   char *getFunctionName(){
     return header->getFunctionName();
   }
-  Type *getFunctionType(){
+  OurType *getFunctionType(){
     return header->getFunctionType();
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
   Decl_list *decl_list;
   Label *label;
@@ -1891,6 +1969,8 @@ public:
   virtual void sem() override {
     for (Local *l : local_list) l->sem();
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
    std::vector<Local *> local_list;
 };
@@ -1943,6 +2023,8 @@ public:
     s += ")";
     return s;
   }
+  virtual Value* compile() const override { return 0;}
+
 private:
   Local_list *local_list;
   Block *block;

@@ -3,18 +3,19 @@
 enum Types { TYPE_INTEGER, TYPE_BOOLEAN, TYPE_REAL, TYPE_ARRAY, TYPE_CHAR, TYPE_STRING, TYPE_POINTER, TYPE_PROCEDURE, TYPE_NIL, TYPE_RES, TYPE_LABEL };
 
 
-class Type: public AST{
+class OurType: public AST{
 public:
   virtual void printOn(std::ostream &out) const override {
     out << "Type()";
   }
-  virtual bool operator==(const Type &that) const { return false; }
+  virtual bool operator==(const OurType &that) const { return false; }
+  virtual Value* compile() const override { return 0;}
   Types val;
-  Type *oftype;
+  OurType *oftype;
   int size;
 };
 
-class TypeNil: public Type{
+class TypeNil: public OurType{
 public:
   TypeNil(){
     val = TYPE_NIL;
@@ -29,15 +30,17 @@ public:
     s += "Nil()";
     return s;
   }
-  virtual bool operator==(const Type &that) const override {
+  virtual bool operator==(const OurType &that) const override {
     if(that.val == TYPE_NIL || that.val == TYPE_POINTER){
       return true;
     }
     return false;
   }
+  virtual Value* compile() const override { return 0;}
+
 };
 
-class TypeRes: public Type{
+class TypeRes: public OurType{
 public:
   TypeRes(){
     val = TYPE_RES;
@@ -52,13 +55,15 @@ public:
     s += "TypeRes()";
     return s;
   }
-  virtual bool operator==(const Type &that) const override {
+  virtual bool operator==(const OurType &that) const override {
     std::cout << "Variable result is used uninitialized";
     exit(1);
   }
+  virtual Value* compile() const override { return 0;}
+
 };
 
-class TypeLabel: public Type{
+class TypeLabel: public OurType{
 public:
   TypeLabel(){
     val = TYPE_LABEL;
@@ -73,13 +78,15 @@ public:
     s += "TypeLabel()";
     return s;
   }
-  virtual bool operator==(const Type &that) const override {
+  virtual bool operator==(const OurType &that) const override {
     return false;
   }
+  virtual Value* compile() const override { return 0;}
+
 };
 
 
-class Integer: public Type{
+class Integer: public OurType{
 public:
   Integer(){ val = TYPE_INTEGER; oftype = nullptr; size = -1;}
   virtual void printOn(std::ostream &out) const override {
@@ -90,15 +97,17 @@ public:
     s += "Integer()";
     return s;
   }
-  virtual bool operator==(const Type &that) const override {
+  virtual bool operator==(const OurType &that) const override {
     if(that.val == TYPE_INTEGER){
       return true;
     }
     return false;
   }
+  virtual Value* compile() const override { return 0;}
+
 };
 
-class Char: public Type{
+class Char: public OurType{
 public:
   Char(){ val = TYPE_CHAR; oftype = nullptr; size = -1;}
   virtual void printOn(std::ostream &out) const override {
@@ -109,15 +118,16 @@ public:
     s += "Char()";
     return s;
   }
-  virtual bool operator==(const Type &that) const override {
+  virtual bool operator==(const OurType &that) const override {
     if(that.val == TYPE_CHAR){
       return true;
     }
     return false;
   }
+  virtual Value* compile() const override { return 0;}
 
 };
-class Real: public Type{
+class Real: public OurType{
 public:
   Real(){ val = TYPE_REAL; oftype = nullptr; size = -1;}
   virtual void printOn(std::ostream &out) const override {
@@ -128,15 +138,17 @@ public:
     s += "Real()";
     return s;
   }
-  virtual bool operator==(const Type &that) const override {
+  virtual bool operator==(const OurType &that) const override {
     if(that.val == TYPE_REAL){
       return true;
     }
     return false;
   }
+  virtual Value* compile() const override { return 0;}
+
 
 };
-class Boolean: public Type{
+class Boolean: public OurType{
 public:
   Boolean(){ val = TYPE_BOOLEAN; oftype = nullptr; size = -1;}
   virtual void printOn(std::ostream &out) const override {
@@ -147,16 +159,18 @@ public:
     s += "Boolean()";
     return s;
   }
-  virtual bool operator==(const Type &that) const override {
+  virtual bool operator==(const OurType &that) const override {
     if(that.val == TYPE_BOOLEAN){
       return true;
     }
     return false;
   }
+  virtual Value* compile() const override { return 0;}
+
 
 };
 
-class ProcedureType: public Type{
+class ProcedureType: public OurType{
 public:
   ProcedureType(){ val = TYPE_PROCEDURE; oftype = nullptr; size = -1;}
   virtual void printOn(std::ostream &out) const override {
@@ -167,12 +181,14 @@ public:
     s += "ProcedureType()";
     return s;
   }
+  virtual Value* compile() const override { return 0;}
+
 
 };
 
-class Array: public Type{
+class Array: public OurType{
 public:
-  Array(Type *t, int s = -1){
+  Array(OurType *t, int s = -1){
     val = TYPE_ARRAY;
     if(s>0) size = s;
     else size = -1;
@@ -209,7 +225,7 @@ public:
       return s;
     }
   }
-  virtual bool operator==(const Type &that) const override {
+  virtual bool operator==(const OurType &that) const override {
     if(that.val == TYPE_ARRAY){
       if(size > 0){
         if(*oftype == *that.oftype && size == that.size ) return true;
@@ -223,11 +239,13 @@ public:
     }
     return false;
   }
+  virtual Value* compile() const override { return 0;}
+
 };
 
-class Pointer: public Type{
+class Pointer: public OurType{
 public:
-  Pointer(Type *t){
+  Pointer(OurType *t){
     val = TYPE_POINTER;
     oftype = t;
     size = -1;
@@ -245,7 +263,7 @@ public:
     s += ")";
     return s;
   }
-  virtual bool operator==(const Type &that) const override {
+  virtual bool operator==(const OurType &that) const override {
     if(that.val == TYPE_NIL){
       return true;
     }
@@ -254,4 +272,6 @@ public:
     }
     return false;
   }
+  virtual Value* compile() const override { return 0;}
+  
 };

@@ -3,15 +3,15 @@
 #include <cstdlib>
 #include <vector>
 #include <map>
-#include "Type.hpp"
+#include "OurType.hpp"
 
 
 struct SymbolEntry {
-  Type *type;
+  OurType *type;
   int offset;
   std::string s;
   SymbolEntry() {}
-  SymbolEntry(Type *t, int ofs, std::string c) : type(t), offset(ofs), s(c){}
+  SymbolEntry(OurType *t, int ofs, std::string c) : type(t), offset(ofs), s(c){}
 };
 
 class Formal_list;
@@ -26,7 +26,7 @@ public:
     if (locals.find(c) == locals.end()) return nullptr;
     return &(locals[c]);
   }
-  void insert(std::string c, Type *t) {
+  void insert(std::string c, OurType *t) {
     if (locals.find(c) != locals.end()) {
       print();
       std::cerr << "Duplicate variable " << c << std::endl;
@@ -40,7 +40,7 @@ public:
     functionFormals[c] = nullptr;
     label[c] = false;
   }
-  void insertLabel(std::string c, Type *t) {
+  void insertLabel(std::string c, OurType *t) {
     if (locals.find(c) != locals.end()) {
       print();
       std::cerr << "Duplicate variable " << c << std::endl;
@@ -57,7 +57,7 @@ public:
   bool isLabel(std::string c){
     return label[c];
   }
-  void insertProcedure(std::string c, Type *t, Formal_list *f) {
+  void insertProcedure(std::string c, OurType *t, Formal_list *f) {
     if (locals.find(c) != locals.end()) {
       std::cerr << "Duplicate variable " << c << std::endl;
       exit(1);
@@ -76,7 +76,7 @@ public:
   bool isLib(std::string c){
     return isLibV[c];
   }
-  void insertFunction(std::string c, Type *t, Formal_list *f) {
+  void insertFunction(std::string c, OurType *t, Formal_list *f) {
     if (locals.find(c) != locals.end()) {
       std::cerr << "Duplicate variable " << c << std::endl;
       exit(1);
@@ -133,11 +133,11 @@ public:
     if (isNewV.find(c) == isNewV.end()) return false;
     return true;
   }
-  void insertProcedureForward(std::string c, Type *t, Formal_list *f){ insertProcedure(c, t, f); isForwardV[c] = true; }
-  void insertFunctionForward(std::string c, Type *t, Formal_list *f){ insertFunction(c, t, f); isForwardV[c] = true; }
-  void insertFunctionLib(std::string c, Type *t, Formal_list *f){ insertFunction(c, t, f); isLibV[c] = true; }
-  void insertProcedureLib(std::string c, Type *t, Formal_list *f){ insertProcedure(c, t, f); isLibV[c] = true; }
-  void insertForward(std::string c, Type *t){ insert(c, t); isForwardV[c] = true; }
+  void insertProcedureForward(std::string c, OurType *t, Formal_list *f){ insertProcedure(c, t, f); isForwardV[c] = true; }
+  void insertFunctionForward(std::string c, OurType *t, Formal_list *f){ insertFunction(c, t, f); isForwardV[c] = true; }
+  void insertFunctionLib(std::string c, OurType *t, Formal_list *f){ insertFunction(c, t, f); isLibV[c] = true; }
+  void insertProcedureLib(std::string c, OurType *t, Formal_list *f){ insertProcedure(c, t, f); isLibV[c] = true; }
+  void insertForward(std::string c, OurType *t){ insert(c, t); isForwardV[c] = true; }
   void removeForward(std::string c){
     std::map<std::string, bool>::iterator it;
     it=isForwardV.find(c);
@@ -246,15 +246,15 @@ public:
     scopes.back().print();
   }
   int getSizeOfCurrentScope() const { return scopes.back().getSize(); }
-  void insert(std::string c, Type *t) { scopes.back().insert(c, t); }
+  void insert(std::string c, OurType *t) { scopes.back().insert(c, t); }
   bool isProcedure(std::string s){
     for (auto i = scopes.rbegin(); i != scopes.rend(); ++i) {
       if(i->exists(s)) return i->isProcedure(s);
     }
     return false;
   }
-  void insertLabel(std::string c, Type *t) { scopes.back().insertLabel(c, t); }
-  void insertProcedure(std::string c, Type *t, Formal_list *f) { scopes.back().insertProcedure(c, t, f); }
+  void insertLabel(std::string c, OurType *t) { scopes.back().insertLabel(c, t); }
+  void insertProcedure(std::string c, OurType *t, Formal_list *f) { scopes.back().insertProcedure(c, t, f); }
   bool isFunction(std::string s){
     for (auto i = scopes.rbegin(); i != scopes.rend(); ++i) {
       if(i->exists(s)) return i->isFunction(s);
@@ -267,13 +267,13 @@ public:
     }
     return false;
   }
-  void insertProcedureForward(std::string c, Type *t, Formal_list *f){ scopes.back().insertProcedureForward(c, t, f); }
-  void insertFunctionForward(std::string c, Type *t, Formal_list *f){ scopes.back().insertFunctionForward(c, t, f); }
-  void insertForward(std::string c, Type *t){ scopes.back().insertForward(c, t); }
+  void insertProcedureForward(std::string c, OurType *t, Formal_list *f){ scopes.back().insertProcedureForward(c, t, f); }
+  void insertFunctionForward(std::string c, OurType *t, Formal_list *f){ scopes.back().insertFunctionForward(c, t, f); }
+  void insertForward(std::string c, OurType *t){ scopes.back().insertForward(c, t); }
 
-  void insertFunction(std::string c, Type *t, Formal_list *f) { scopes.back().insertFunction(c, t, f); }
-  void insertFunctionLib(std::string c, Type *t, Formal_list *f) { scopes.back().insertFunctionLib(c, t, f); }
-  void insertProcedureLib(std::string c, Type *t, Formal_list *f){ scopes.back().insertProcedureLib(c, t, f); }
+  void insertFunction(std::string c, OurType *t, Formal_list *f) { scopes.back().insertFunction(c, t, f); }
+  void insertFunctionLib(std::string c, OurType *t, Formal_list *f) { scopes.back().insertFunctionLib(c, t, f); }
+  void insertProcedureLib(std::string c, OurType *t, Formal_list *f){ scopes.back().insertProcedureLib(c, t, f); }
 
 
   std::string getParent(){
