@@ -10,6 +10,7 @@ public:
   }
   virtual bool operator==(const OurType &that) const { return false; }
   virtual Value* compile() const override { return 0;}
+  virtual Value* compile_r() const override { return 0;}
   Types val;
   OurType *oftype;
   int size;
@@ -37,6 +38,7 @@ public:
     return false;
   }
   virtual Value* compile() const override { return 0;}
+  virtual Value* compile_r() const override { return 0;}
 
 };
 
@@ -60,6 +62,7 @@ public:
     exit(1);
   }
   virtual Value* compile() const override { return 0;}
+  virtual Value* compile_r() const override { return 0;}
 
 };
 
@@ -82,6 +85,7 @@ public:
     return false;
   }
   virtual Value* compile() const override { return 0;}
+  virtual Value* compile_r() const override { return 0;}
 
 };
 
@@ -104,6 +108,7 @@ public:
     return false;
   }
   virtual Value* compile() const override { return 0;}
+  virtual Value* compile_r() const override { return 0;}
 
 };
 
@@ -125,6 +130,7 @@ public:
     return false;
   }
   virtual Value* compile() const override { return 0;}
+  virtual Value* compile_r() const override { return 0;}
 
 };
 class Real: public OurType{
@@ -145,6 +151,7 @@ public:
     return false;
   }
   virtual Value* compile() const override { return 0;}
+  virtual Value* compile_r() const override { return 0;}
 
 
 };
@@ -166,6 +173,7 @@ public:
     return false;
   }
   virtual Value* compile() const override { return 0;}
+  virtual Value* compile_r() const override { return 0;}
 
 
 };
@@ -182,6 +190,7 @@ public:
     return s;
   }
   virtual Value* compile() const override { return 0;}
+  virtual Value* compile_r() const override { return 0;}
 
 
 };
@@ -240,6 +249,7 @@ public:
     return false;
   }
   virtual Value* compile() const override { return 0;}
+  virtual Value* compile_r() const override { return 0;}
 
 };
 
@@ -273,5 +283,6 @@ public:
     return false;
   }
   virtual Value* compile() const override { return 0;}
-  
+  virtual Value* compile_r() const override { return 0;}
+
 };

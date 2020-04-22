@@ -1,8 +1,6 @@
 program p;
-var d : ^ ^ integer;
-var e : ^ integer;
-var f , g : integer;
+var d : integer;
 begin
-new d^;
-dispose d^;
+d := 10;
+d := d + 100;
 end.

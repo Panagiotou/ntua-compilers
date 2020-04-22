@@ -157,10 +157,11 @@ program:
     Library *l = new Library();
     l->init(); // Initialize all built in functions and procedures
     $4->sem();
+    if(DEBUGPARSER) $4->printOn(std::cout);
+    
     $4->llvm_compile_and_dump();
     // std::cout << "AST: " << *$1 << std::endl;
     //$1->run();
-    if(DEBUGPARSER) $4->printOn(std::cout);
     st.closeScope();
   }
   ;

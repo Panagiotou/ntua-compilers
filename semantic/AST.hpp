@@ -43,6 +43,7 @@ public:
     return ConstantInt::get(TheContext, APInt(32, n, true));
   }
   virtual Value* compile() const = 0;
+  virtual Value* compile_r() const = 0;
   void llvm_compile_and_dump() {
     // Initialize the module and the optimization passes.
     TheModule = make_unique<Module>("pcl program", TheContext);
@@ -89,6 +90,7 @@ public:
     Builder.SetInsertPoint(BB);
     // Emit the program code.
     compile();
+    Builder.CreateAdd(c32(1), c32(1), "addtmp");
     Builder.CreateRet(c32(0));
     // Verify the IR.
     bool bad = verifyModule(*TheModule, &errs());

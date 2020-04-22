@@ -30,7 +30,7 @@ program solve;
   end;
 
 begin
-  x : numberOfRings := 1;
+  x : numberOfRings := 1 + 2;
   (*writeString("Please,givethenumberofrings:");*)
   numberOfRings := readInteger();
   writeString("\nHereisthesolution:\n\n");

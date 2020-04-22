@@ -61,7 +61,7 @@ public:
   virtual bool isResult(){
       return false;
   }
-  virtual Value* compile() const override { return nullptr;}
+  // virtual Value* compile() const override { return nullptr;}
 
   bool isNew;
 };
@@ -103,6 +103,7 @@ public:
     for (Expr *e : expr_list) e->sem();
   }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
    std::vector<Expr *> expr_list;
@@ -116,7 +117,7 @@ public:
     std::cout << "Evaluating Rval";
     return -1;
   }
-  virtual Value* compile() const override { return nullptr;}
+  // virtual Value* compile() const override {  return nullptr;}
 
 };
 class Lval: public Expr {
@@ -125,7 +126,7 @@ public:
     std::cout << "Evaluating Lval";
     return -1;
   }
-  virtual Value* compile() const override { return nullptr;}
+  // virtual Value* compile() const override { return nullptr;}
 
 };
 
@@ -152,6 +153,7 @@ public:
   }
   virtual void sem() override{  }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   std::string var;
@@ -264,64 +266,76 @@ public:
     return 0;  // this will never be reached.
   }
   virtual Value* compile() const override {
+    // printOn(std::cout);
     Value *l = left->compile();
+    // l = Builder.CreateLoad(l);
     Value *r = right->compile();
+
     if(! strcmp(op, "+")) return Builder.CreateAdd(l, r, "addtmp");
-    if(! strcmp(op, "-")) return Builder.CreateSub(l, r, "subtmp");
-    if(! strcmp(op, "*")) return Builder.CreateMul(l, r, "multmp");
-    if(! strcmp(op, "/")) return Builder.CreateFDiv(l, r, "fdivtmp"); //must be float?
-    if(! strcmp(op, "=")){
-      if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
-          return Builder.CreateFCmpOEQ(l, r, "feqtmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
-      }
-      else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
-        return Builder.CreateICmpEQ(l, r, "eqtmp");
-      }
-    }
-    if(! strcmp(op, "<")){
-      if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
-          return Builder.CreateFCmpOLT(l, r, "flttmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
-      }
-      else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
-        return Builder.CreateICmpSLT(l, r, "lttmp"); // signed less than
-      }
-    }
-    if(! strcmp(op, ">")){
-      if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
-          return Builder.CreateFCmpOGT(l, r, "fgttmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
-      }
-      else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
-        return Builder.CreateICmpSGT(l, r, "lgtmp"); // signed greater than
-      }
-    }
-    if(! strcmp(op, "<=")){
-      if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
-          return Builder.CreateFCmpOLE(l, r, "fletmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
-      }
-      else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
-        return Builder.CreateICmpSLE(l, r, "lletmp"); // signed less eq than
-      }
-    }
-    if(! strcmp(op, ">=")){
-      if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
-          return Builder.CreateFCmpOGE(l, r, "fgetmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
-      }
-      else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
-        return Builder.CreateICmpSGE(l, r, "lgetmp"); // signed greater eq than
-      }
-    }
-    if(! strcmp(op, "<>")){
-      if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
-          return Builder.CreateFCmpONE(l, r, "fnetmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
-      }
-      else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
-        return Builder.CreateICmpNE(l, r, "lnetmp"); // not equal
-      }
-    }
-    if(! strcmp(op, "div")) return Builder.CreateSDiv(l, r, "divtmp");
-    if(! strcmp(op, "mod")) return Builder.CreateSRem(l, r, "modtmp");
-    if(! strcmp(op, "or")) return Builder.CreateOr(l, r, "ortmp");
-    if(! strcmp(op, "and")) return Builder.CreateAnd(l, r, "andtmp");
+    // if(! strcmp(op, "-")) return Builder.CreateSub(l, r, "subtmp");
+    // if(! strcmp(op, "*")) return Builder.CreateMul(l, r, "multmp");
+    // if(! strcmp(op, "/")) return Builder.CreateFDiv(l, r, "fdivtmp"); //must be float?
+    // if(! strcmp(op, "=")){
+    //   if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
+    //       return Builder.CreateFCmpOEQ(l, r, "feqtmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
+    //   }
+    //   else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
+    //     return Builder.CreateICmpEQ(l, r, "eqtmp");
+    //   }
+    // }
+    // if(! strcmp(op, "<")){
+    //   if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
+    //       return Builder.CreateFCmpOLT(l, r, "flttmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
+    //   }
+    //   else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
+    //     return Builder.CreateICmpSLT(l, r, "lttmp"); // signed less than
+    //   }
+    // }
+    // if(! strcmp(op, ">")){
+    //   if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
+    //       return Builder.CreateFCmpOGT(l, r, "fgttmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
+    //   }
+    //   else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
+    //     return Builder.CreateICmpSGT(l, r, "lgtmp"); // signed greater than
+    //   }
+    // }
+    // if(! strcmp(op, "<=")){
+    //   if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
+    //       return Builder.CreateFCmpOLE(l, r, "fletmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
+    //   }
+    //   else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
+    //     return Builder.CreateICmpSLE(l, r, "lletmp"); // signed less eq than
+    //   }
+    // }
+    // if(! strcmp(op, ">=")){
+    //   if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
+    //       return Builder.CreateFCmpOGE(l, r, "fgetmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
+    //   }
+    //   else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
+    //     return Builder.CreateICmpSGE(l, r, "lgetmp"); // signed greater eq than
+    //   }
+    // }
+    // if(! strcmp(op, "<>")){
+    //   if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
+    //       return Builder.CreateFCmpONE(l, r, "fnetmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
+    //   }
+    //   else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
+    //     return Builder.CreateICmpNE(l, r, "lnetmp"); // not equal
+    //   }
+    // }
+    // if(! strcmp(op, "div")) return Builder.CreateSDiv(l, r, "divtmp");
+    // if(! strcmp(op, "mod")) return Builder.CreateSRem(l, r, "modtmp");
+    // if(! strcmp(op, "or")) return Builder.CreateOr(l, r, "ortmp");
+    // if(! strcmp(op, "and")) return Builder.CreateAnd(l, r, "andtmp");
+    return nullptr;
+  }
+  virtual Value* compile_r() const override {
+    // printOn(std::cout);
+    Value *l = left->compile_r();
+    // l = Builder.CreateLoad(l);
+    Value *r = right->compile_r();
+
+    if(! strcmp(op, "+")) return Builder.CreateAdd(l, r, "addtmp");
     return nullptr;
   }
 
@@ -379,6 +393,7 @@ public:
     return 0;  // this will never be reached.
   }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   char *op;
@@ -407,7 +422,22 @@ public:
     std::string s = var;
     type = st.lookup(s)->type;
   }
-  virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile() const override {
+    // char name[] = { var, '_', 'p', 't', 'r', '\0' };
+    Value *v = Builder.CreateGEP(
+        TheVars, std::vector<Value *>{ c32(0), c32(offset) }, var);
+    // name[1] = '\0';
+    // Value *ret = Builder.CreateLoad(v, var);
+    return v;
+  }
+  virtual Value* compile_r() const override {
+    // char name[] = { var, '_', 'p', 't', 'r', '\0' };
+    Value *v = Builder.CreateGEP(
+        TheVars, std::vector<Value *>{ c32(0), c32(offset) }, var);
+    // name[1] = '\0';
+    Value *ret = Builder.CreateLoad(v, var);
+    return ret;
+  }
 
 private:
   char* var;
@@ -460,6 +490,7 @@ public:
     type = lval->type->oftype;
   }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   Expr *lval;
@@ -495,6 +526,7 @@ public:
       type = new Pointer(lval->type);
   }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   Expr *lval;
@@ -536,6 +568,7 @@ public:
       type = expr->type->oftype;
   }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   Expr *expr;
@@ -589,6 +622,7 @@ public:
     std::cout << "Running IdLabel";
   }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   char* id;
@@ -665,7 +699,16 @@ public:
       }
     }
   }
-  virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile() const override {
+    Value *lhs = lval->compile();
+    Value *rhs = exprRight->compile_r();
+    return Builder.CreateStore(rhs, lhs);
+   }
+  virtual Value* compile_r() const override {
+    Value *lhs = lval->compile();
+    Value *rhs = exprRight->compile_r();
+    return Builder.CreateStore(rhs, lhs);
+   }
 
 private:
   Expr *exprRight;
@@ -689,6 +732,7 @@ public:
     std::cout << "Running Return";
   }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
 };
@@ -743,6 +787,7 @@ public:
     return id_list;
   }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
    std::vector<char* > id_list;
@@ -791,6 +836,7 @@ public:
    return id_list->charList();
  }
  virtual Value* compile() const override { return nullptr;}
+ virtual Value* compile_r() const override { return nullptr;}
 
 private:
   Id_list *id_list;
@@ -843,6 +889,7 @@ public:
     for (Formal *f : formal_list) f->sem();
   }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
    std::vector<Formal *> formal_list;
@@ -970,6 +1017,7 @@ public:
     }
   }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   char* id;
@@ -1094,6 +1142,7 @@ public:
     }
   }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   char *id;
@@ -1180,6 +1229,7 @@ public:
     }
   }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   Expr *lval;
@@ -1225,6 +1275,7 @@ public:
     }
   }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   char* id;
@@ -1266,7 +1317,14 @@ public:
   virtual void sem() override {
     for (Stmt *s : stmt_list) s->sem();
   }
-  virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile() const override {
+    for (Stmt *s : stmt_list) s->compile();
+    return nullptr;
+  }
+  virtual Value* compile_r() const override {
+    for (Stmt *s : stmt_list) s->compile_r();
+    return nullptr;
+  }
 
 
 private:
@@ -1296,7 +1354,8 @@ public:
   virtual int get(){
     return con;
   }
-  virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile() const override { return c32(con);}
+  virtual Value* compile_r() const override { return c32(con);}
 
 private:
   int con;
@@ -1321,6 +1380,7 @@ public:
   virtual int eval() const override { return 0; } //wrong
   // virtual void sem() override { type = new Char(); }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   char con;
@@ -1343,6 +1403,7 @@ public:
   virtual int eval() const override { return 0; } //wrong
   // virtual void sem() override { type = new String(); }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   char *con;
@@ -1365,6 +1426,7 @@ public:
   virtual int eval() const override { return 0; } //wrong
   // virtual void sem() override { type = new Real(); }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   double con;
@@ -1398,6 +1460,7 @@ public:
   virtual int eval() const override { return 0; } //wrong
   // virtual void sem() override { type = new Boolean(); }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   bool con;
@@ -1419,6 +1482,7 @@ public:
   }
   virtual int eval() const override { return 0; } //wrong
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   char *con;
@@ -1440,6 +1504,7 @@ public:
   }
   virtual int eval() const override { return 0; } //wrong
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   char *con;
@@ -1517,6 +1582,7 @@ public:
 }
 
 virtual Value* compile() const override { return nullptr;}
+virtual Value* compile_r() const override { return nullptr;}
 
 private:
   Expr *lval;
@@ -1564,6 +1630,7 @@ public:
       stmt2->run();
   }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   Expr *cond;
@@ -1609,6 +1676,7 @@ public:
     }
   }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   Expr *expr;
@@ -1649,7 +1717,14 @@ public:
 virtual void run() const override {
   std::cout << "Running block";
 }
-virtual Value* compile() const override { return nullptr;}
+virtual Value* compile() const override {
+  stmt_list->compile();
+  return nullptr;
+}
+virtual Value* compile_r() const override {
+  stmt_list->compile_r();
+  return nullptr;
+}
 
 private:
   Stmt_list *stmt_list;
@@ -1694,6 +1769,7 @@ public:
     }
   }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   Id_list *id_list;
@@ -1726,7 +1802,22 @@ public:
       st.insert(var, type);
     }
   }
-  virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile() const override {
+    // for (char *id : id_list->getlist()) {
+    //   std::string var = id;
+    //   int offset = 0;
+    //   char name[] = { *var, '_', 'p', 't', 'r', '\0' };
+    //   Value *v = Builder.CreateGEP(
+    //       TheVars, std::vector<Value *>{ c32(0), c32(offset)}, var);
+    //   // name[1] = '\0';
+    //   Builder.CreateLoad(v, var);
+    //   return v;
+    // }
+    return nullptr;
+  }
+  virtual Value* compile_r() const override {
+    return nullptr;
+  }
 
 private:
   Id_list *id_list;
@@ -1767,7 +1858,14 @@ public:
   virtual void sem() override {
     for (Decl *d : decl_list) d->sem();
   }
-  virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile() const override {
+    for (Decl *d : decl_list) d->compile();
+    return nullptr;
+  }
+  virtual Value* compile_r() const override {
+    for (Decl *d : decl_list) d->compile_r();
+    return nullptr;
+  }
 
 private:
    std::vector<Decl *> decl_list;
@@ -1825,6 +1923,7 @@ public:
     }
   }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   char* id;
@@ -1895,6 +1994,7 @@ public:
     return type;
   }
   virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile_r() const override { return nullptr;}
 
 private:
   char* id;
@@ -1985,7 +2085,38 @@ public:
   OurType *getFunctionType(){
     return header->getFunctionType();
   }
-  virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile() const override {
+    if(localType.compare("var") == 0){
+      decl_list->compile();
+    }
+    else if(localType.compare("label") == 0){
+      label->compile();
+    }
+    else if(localType.compare("forp") == 0){
+      header->compile();
+      body->compile();
+    }
+    else if(localType.compare("forward") == 0){
+      header->compile();
+    }
+    return nullptr;
+  }
+  virtual Value* compile_r() const override {
+    if(localType.compare("var") == 0){
+      decl_list->compile_r();
+    }
+    else if(localType.compare("label") == 0){
+      label->compile_r();
+    }
+    else if(localType.compare("forp") == 0){
+      header->compile_r();
+      body->compile_r();
+    }
+    else if(localType.compare("forward") == 0){
+      header->compile_r();
+    }
+    return nullptr;
+  }
 
 private:
   Decl_list *decl_list;
@@ -2029,7 +2160,14 @@ public:
   virtual void sem() override {
     for (Local *l : local_list) l->sem();
   }
-  virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile() const override {
+    for (Local *l : local_list) l->compile();
+    return nullptr;
+  }
+  virtual Value* compile_r() const override {
+    for (Local *l : local_list) l->compile_r();
+    return nullptr;
+  }
 
 private:
    std::vector<Local *> local_list;
@@ -2083,7 +2221,16 @@ public:
     s += ")";
     return s;
   }
-  virtual Value* compile() const override { return nullptr;}
+  virtual Value* compile() const override {
+    local_list->compile();
+    block->compile();
+    return nullptr;
+  }
+  virtual Value* compile_r() const override {
+    local_list->compile_r();
+    block->compile_r();
+    return nullptr;
+  }
 
 private:
   Local_list *local_list;
