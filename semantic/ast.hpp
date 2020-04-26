@@ -272,9 +272,9 @@ public:
     Value *r = right->compile();
 
     if(! strcmp(op, "+")) return Builder.CreateAdd(l, r, "addtmp");
-    // if(! strcmp(op, "-")) return Builder.CreateSub(l, r, "subtmp");
-    // if(! strcmp(op, "*")) return Builder.CreateMul(l, r, "multmp");
-    // if(! strcmp(op, "/")) return Builder.CreateFDiv(l, r, "fdivtmp"); //must be float?
+    if(! strcmp(op, "-")) return Builder.CreateSub(l, r, "subtmp");
+    if(! strcmp(op, "*")) return Builder.CreateMul(l, r, "multmp");
+    if(! strcmp(op, "/")) return Builder.CreateFDiv(l, r, "fdivtmp"); //must be float?
     // if(! strcmp(op, "=")){
     //   if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
     //       return Builder.CreateFCmpOEQ(l, r, "feqtmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
@@ -323,8 +323,8 @@ public:
     //     return Builder.CreateICmpNE(l, r, "lnetmp"); // not equal
     //   }
     // }
-    // if(! strcmp(op, "div")) return Builder.CreateSDiv(l, r, "divtmp");
-    // if(! strcmp(op, "mod")) return Builder.CreateSRem(l, r, "modtmp");
+    if(! strcmp(op, "div")) return Builder.CreateSDiv(l, r, "divtmp");
+    if(! strcmp(op, "mod")) return Builder.CreateSRem(l, r, "modtmp");
     // if(! strcmp(op, "or")) return Builder.CreateOr(l, r, "ortmp");
     // if(! strcmp(op, "and")) return Builder.CreateAnd(l, r, "andtmp");
     return nullptr;
@@ -336,6 +336,15 @@ public:
     Value *r = right->compile_r();
 
     if(! strcmp(op, "+")) return Builder.CreateAdd(l, r, "addtmp");
+    if(! strcmp(op, "-")) return Builder.CreateSub(l, r, "subtmp");
+    if(! strcmp(op, "*")) return Builder.CreateMul(l, r, "multmp");
+    if(! strcmp(op, "/")) return Builder.CreateFDiv(l, r, "fdivtmp"); //must be float?
+
+
+    if(! strcmp(op, "div")) return Builder.CreateSDiv(l, r, "divtmp");
+    if(! strcmp(op, "mod")) return Builder.CreateSRem(l, r, "modtmp");
+    // if(! strcmp(op, "or")) return Builder.CreateOr(l, r, "ortmp");
+    // if(! strcmp(op, "and")) return Builder.CreateAnd(l, r, "andtmp");
     return nullptr;
   }
 

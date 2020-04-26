@@ -1,7 +1,11 @@
 program p;
 var d : integer;
 var x : integer;
+var a : integer;
+var b : integer;
 begin
 d := 10;
-x := d + 4;
+x := d + 2;
+a := d - 2;
+b := d * 2;
 end.
