@@ -6,7 +6,7 @@
 
   SymbolTable st;
   std::vector<int> rt_stack;
-  #define DEBUGPARSER true
+  #define DEBUGPARSER false
 
   LLVMContext AST::TheContext;
   IRBuilder<> AST::Builder(TheContext);
@@ -156,9 +156,10 @@ program:
     st.openScope();
     Library *l = new Library();
     l->init(); // Initialize all built in functions and procedures
-    $4->sem();
     if(DEBUGPARSER) $4->printOn(std::cout);
-    
+
+    $4->sem();
+
     $4->llvm_compile_and_dump();
     // std::cout << "AST: " << *$1 << std::endl;
     //$1->run();

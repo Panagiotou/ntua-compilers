@@ -217,6 +217,19 @@ public:
     }
     return 0;
   }
+  bool existsLastScope(std::string c){
+    SymbolEntry *e;
+    e = scopes.back().lookup(c);
+    if (e != nullptr){
+      return 1;
+    }
+    return 0;
+  }
+  SymbolEntry *getSymbolEntry(std::string c){
+    SymbolEntry *e;
+    e = scopes.back().lookup(c);
+    return e;
+  }
   void printScopes(){
     int k = 0;
     for (auto i = scopes.rbegin(); i != scopes.rend(); ++i) {
@@ -278,6 +291,7 @@ public:
 
   std::string getParent(){
     std::string s;
+    std::cout<<scopes.size();
     if(scopes.size() == 1){
       s = scopes.back().getParentFunction();
       return s;
@@ -342,6 +356,9 @@ public:
     std::cout << "Cant find scope of " << s << "\n";
     exit(1);
     return ;
+  }
+  int getSize(){
+    return scopes.size();
   }
 private:
   std::vector<Scope> scopes;

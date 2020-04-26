@@ -421,9 +421,19 @@ public:
   virtual void sem() override {
     std::string s = var;
     type = st.lookup(s)->type;
+
+    if(st.existsLastScope(var)){
+      SymbolEntry *en = st.getSymbolEntry(var);
+      offset = en->offset;
+    }
+    else{
+      std::cout<<"Something wrong terribly";
+      exit(1);
+    }
   }
   virtual Value* compile() const override {
     // char name[] = { var, '_', 'p', 't', 'r', '\0' };
+
     Value *v = Builder.CreateGEP(
         TheVars, std::vector<Value *>{ c32(0), c32(offset) }, var);
     // name[1] = '\0';
@@ -822,8 +832,10 @@ public:
    }
  }
  virtual void sem() override{
+   printOn(std::cout);
    for (char *id : id_list->getlist()) {
      std::string var = id;
+     std::cout<<"FORW"<<var;
      if(!st.isForward(var)){
        st.insert(var, type);
      }
@@ -846,7 +858,7 @@ private:
 
 class Formal_list: public AST{
 public:
-  Formal_list(): formal_list(){}
+  Formal_list(): formal_list(){std::vector<Formal *> formal_list;}
   ~Formal_list() {
     for (Formal *f : formal_list) delete f;
   }
@@ -1705,12 +1717,14 @@ public:
     return s;
   }
   virtual void sem() override {
-    std::string parentf = st.getParent();
-    if(st.getFormalsFunctionAll(parentf)){
-      st.getFormalsFunctionAll(parentf)->sem();
-    }
-    else if(st.getFormalsProcedureAll(parentf)){
-      st.getFormalsProcedureAll(parentf)->sem();
+    if(st.getSize() > 2){
+      std::string parentf = st.getParent();
+      if(st.getFormalsFunctionAll(parentf)){
+        st.getFormalsFunctionAll(parentf)->sem();
+      }
+      else if(st.getFormalsProcedureAll(parentf)){
+        st.getFormalsProcedureAll(parentf)->sem();
+      }
     }
     stmt_list->sem();
   }
@@ -2187,20 +2201,23 @@ public:
     st.openScope();
     local_list->sem();
     block->sem();
-    std::string funName;
-    funName = st.getParent();
-    if(!st.existsResult() && st.isFunction(funName) && !st.isLib(funName)){
-      std::cout << "Function " << funName << " does not have a result\n";
-      exit(1);
-    }
-    if(!st.isemptyForward()){
-      std::vector<std::string> v;
-      v = st.getForPForward();
-      std::cout << "The following functions or procedures where declared but not implemented\n";
-      for(std::string fp : v){
-        std::cout << "\t" << fp << "\n";
+    if(st.getSize() > 2){
+      std::string funName;
+      funName = st.getParent();
+      std::cout<<funName;
+      if(!st.existsResult() && st.isFunction(funName) && !st.isLib(funName)){
+        std::cout << "Function " << funName << " does not have a result\n";
+        exit(1);
       }
-      exit(1);
+      if(!st.isemptyForward()){
+        std::vector<std::string> v;
+        v = st.getForPForward();
+        std::cout << "The following functions or procedures where declared but not implemented\n";
+        for(std::string fp : v){
+          std::cout << "\t" << fp << "\n";
+        }
+        exit(1);
+      }
     }
     st.closeScope();
   }
@@ -2430,6 +2447,15 @@ public:
     formal_list->append_formal(formal);
     st.insertFunctionLib("round", new Integer(), formal_list);
 
+    //function chr (n : integer) : char;
+    formal_list = new Formal_list();
+    id_list = new Id_list();
+
+    id_list->append_idString("n");
+    formal = new Formal(id_list, new Integer(), false);
+    formal_list->append_formal(formal);
+    st.insertFunctionLib("chr", new Char(), formal_list);
+
     //function ord (c : char) : integer;
     formal_list = new Formal_list();
     id_list = new Id_list();
@@ -2439,13 +2465,5 @@ public:
     formal_list->append_formal(formal);
     st.insertFunctionLib("ord", new Integer(), formal_list);
 
-    //function chr (n : integer) : char;
-    formal_list = new Formal_list();
-    id_list = new Id_list();
-
-    id_list->append_idString("n");
-    formal = new Formal(id_list, new Integer(), false);
-    formal_list->append_formal(formal);
-    st.insertFunctionLib("chr", new Char(), formal_list);
   }
 };
