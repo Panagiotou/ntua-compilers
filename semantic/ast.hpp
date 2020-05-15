@@ -445,6 +445,7 @@ public:
       offset = en->offset;
     }
     else{
+      printOn(std::cout);
       std::cout<<"Something wrong terribly";
       exit(1);
     }
@@ -524,14 +525,16 @@ public:
     if(lval->type->val == TYPE_RES){
       lval->type = st.lookup("result")->type;
     }
+    if(expr->type->val == TYPE_RES){
+      expr->type = st.lookup("result")->type;
+    }
     if(lval->type->val != TYPE_ARRAY){
-      printOn(std::cout);
       std::cout << "\n is not of type array!\n";
       exit(1);
     }
     else{
       if(expr->type->val != TYPE_INTEGER){
-        printOn(std::cout);
+        std::cout<<lval->type->val;
         std::cout << "\nbracket expression is not of type integer!\n";
         exit(1);
       }
@@ -871,10 +874,10 @@ public:
    }
  }
  virtual void sem() override{
-   printOn(std::cout);
+   // printOn(std::cout);
    for (char *id : id_list->getlist()) {
      std::string var = id;
-     std::cout<<"FORW"<<var;
+     // std::cout<<"FORW"<<var;
      if(!st.isForward(var)){
        st.insert(var, type);
      }

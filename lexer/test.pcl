@@ -6,6 +6,7 @@ program solve;
   var b : boolean;
   var c : char;
   var k : ^ integer;
+  var l : integer;
   var table : array of char;
 
   function hanoi (var source, target, auxiliary : array of char;
@@ -24,22 +25,11 @@ program solve;
        end;
 
   begin
-    k := @ 4;
-    result := k ^;
+    result := 4;
     move1(auxiliary, auxiliary)
   end;
 
 begin
   x : numberOfRings := 1 + 2;
-  (*writeString("Please,givethenumberofrings:");*)
-  numberOfRings := readInteger();
-  writeString("\nHereisthesolution:\n\n");
-  writeInteger(numberOfRings);
-  writeBoolean(b);
-  writeChar(c);
-  writeReal(r);
-  readString(numberOfRings, table);
 
-  hanoi("left","right","middle",numberOfRings);
-  goto x
 end.
