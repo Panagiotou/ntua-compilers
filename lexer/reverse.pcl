@@ -14,7 +14,7 @@ program reverse;
     i := 0;
     while i < l do
       begin
-      r[i] := s1[l-i-1];
+      r[i] := s[l-i-1];
       i := i+1
       end;
     r[i] := '\0'
