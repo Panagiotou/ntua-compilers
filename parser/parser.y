@@ -14,6 +14,7 @@
   std::unique_ptr<legacy::FunctionPassManager> AST::TheFPM;
 
   GlobalVariable *AST::TheVars;
+  GlobalVariable *AST::TheRealVars;
   GlobalVariable *AST::TheNL;
   Function *AST::TheWriteInteger;
   Function *AST::TheWriteString;
@@ -21,6 +22,7 @@
   Type *AST::i8 = IntegerType::get(TheContext, 8);
   Type *AST::i32 = IntegerType::get(TheContext, 32);
   Type *AST::i64 = IntegerType::get(TheContext, 64);
+  Type *AST::DoubleTyID = Type::getDoubleTy(TheContext);
 
 %}
 
@@ -269,8 +271,8 @@ l-value:
 
 r-value:
  T_int_const { $$ = new Constint(constInts.back()); constInts.pop_back(); }
- | "true" { $$ = new Constboolean("true"); }
- | "false" { $$ = new Constboolean("false"); }
+ | "true" { $$ = new Constboolean(1); }
+ | "false" { $$ = new Constboolean(0); }
  | T_real_const { $$ = new Constreal(constReals.back()); constReals.pop_back(); }
  | T_const_char { $$ = new Constchar(constChars.back()); constChars.pop_back(); }
  | "(" r-value ")" { $$ = $2; }

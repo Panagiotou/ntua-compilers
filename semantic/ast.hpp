@@ -185,6 +185,9 @@ public:
 
     return ((left->type->val == TYPE_REAL) && (right->type->val == TYPE_INTEGER))||((left->type->val ==TYPE_INTEGER) && (right->type->val ==TYPE_REAL))||((left->type->val ==TYPE_REAL) && (right->type->val == TYPE_REAL))||((left->type->val == TYPE_INTEGER) && (right->type->val == TYPE_INTEGER));
   }
+  virtual bool check_float(Expr *left, Expr *right){
+    return (left->type->val == TYPE_REAL) && (right->type->val == TYPE_REAL);
+  }
   virtual void sem() override {
     left->sem();
     right->sem();
@@ -270,8 +273,11 @@ public:
     Value *l = left->compile();
     // l = Builder.CreateLoad(l);
     Value *r = right->compile();
+    if(! strcmp(op, "+")){
+      if((left->type->val == TYPE_REAL) && (right->type->val == TYPE_REAL)) return Builder.CreateFAdd(l, r, "faddtmp");
+      return Builder.CreateAdd(l, r, "addtmp");
+    }
 
-    if(! strcmp(op, "+")) return Builder.CreateAdd(l, r, "addtmp");
     if(! strcmp(op, "-")) return Builder.CreateSub(l, r, "subtmp");
     if(! strcmp(op, "*")) return Builder.CreateMul(l, r, "multmp");
     if(! strcmp(op, "/")) return Builder.CreateFDiv(l, r, "fdivtmp"); //must be float?
@@ -325,8 +331,8 @@ public:
     // }
     if(! strcmp(op, "div")) return Builder.CreateSDiv(l, r, "divtmp");
     if(! strcmp(op, "mod")) return Builder.CreateSRem(l, r, "modtmp");
-    // if(! strcmp(op, "or")) return Builder.CreateOr(l, r, "ortmp");
-    // if(! strcmp(op, "and")) return Builder.CreateAnd(l, r, "andtmp");
+    if(! strcmp(op, "or")) return Builder.CreateOr(l, r, "ortmp");
+    if(! strcmp(op, "and")) return Builder.CreateAnd(l, r, "andtmp");
     return nullptr;
   }
   virtual Value* compile_r() const override {
@@ -335,7 +341,10 @@ public:
     // l = Builder.CreateLoad(l);
     Value *r = right->compile_r();
 
-    if(! strcmp(op, "+")) return Builder.CreateAdd(l, r, "addtmp");
+    if(! strcmp(op, "+")){
+      if((left->type->val == TYPE_REAL) && (right->type->val == TYPE_REAL)) return Builder.CreateFAdd(l, r, "faddtmp");
+      return Builder.CreateAdd(l, r, "addtmp");
+    }
     if(! strcmp(op, "-")) return Builder.CreateSub(l, r, "subtmp");
     if(! strcmp(op, "*")) return Builder.CreateMul(l, r, "multmp");
     if(! strcmp(op, "/")) return Builder.CreateFDiv(l, r, "fdivtmp"); //must be float?
@@ -343,8 +352,8 @@ public:
 
     if(! strcmp(op, "div")) return Builder.CreateSDiv(l, r, "divtmp");
     if(! strcmp(op, "mod")) return Builder.CreateSRem(l, r, "modtmp");
-    // if(! strcmp(op, "or")) return Builder.CreateOr(l, r, "ortmp");
-    // if(! strcmp(op, "and")) return Builder.CreateAnd(l, r, "andtmp");
+    if(! strcmp(op, "or")) return Builder.CreateOr(l, r, "ortmp");
+    if(! strcmp(op, "and")) return Builder.CreateAnd(l, r, "andtmp");
     return nullptr;
   }
 
@@ -442,17 +451,38 @@ public:
   }
   virtual Value* compile() const override {
     // char name[] = { var, '_', 'p', 't', 'r', '\0' };
-
-    Value *v = Builder.CreateGEP(
-        TheVars, std::vector<Value *>{ c32(0), c32(offset) }, var);
+    Value *v;
+    if(type->val == TYPE_INTEGER){
+      v = Builder.CreateGEP(
+          TheVars, std::vector<Value *>{ c32(0), c32(offset) }, var);
+    }
+    else if(type->val == TYPE_REAL){
+      v = Builder.CreateGEP(
+          TheRealVars, std::vector<Value *>{ fp32(0), c32(offset) }, var);
+    }
+    else{
+      v = Builder.CreateGEP(
+          TheVars, std::vector<Value *>{ c32(0), c32(offset) }, var);
+    }
     // name[1] = '\0';
     // Value *ret = Builder.CreateLoad(v, var);
     return v;
   }
   virtual Value* compile_r() const override {
     // char name[] = { var, '_', 'p', 't', 'r', '\0' };
-    Value *v = Builder.CreateGEP(
-        TheVars, std::vector<Value *>{ c32(0), c32(offset) }, var);
+    Value *v;
+    if(type->val == TYPE_INTEGER){
+      v = Builder.CreateGEP(
+          TheVars, std::vector<Value *>{ c32(0), c32(offset) }, var);
+    }
+    else if(type->val == TYPE_REAL){
+      v = Builder.CreateGEP(
+          TheRealVars, std::vector<Value *>{ fp32(0), c32(offset) }, var);
+    }
+    else{
+      v = Builder.CreateGEP(
+          TheVars, std::vector<Value *>{ c32(0), c32(offset) }, var);
+    }
     // name[1] = '\0';
     Value *ret = Builder.CreateLoad(v, var);
     return ret;
@@ -1446,8 +1476,8 @@ public:
   }
   virtual int eval() const override { return 0; } //wrong
   // virtual void sem() override { type = new Real(); }
-  virtual Value* compile() const override { return nullptr;}
-  virtual Value* compile_r() const override { return nullptr;}
+  virtual Value* compile() const override { return fp32(con);}
+  virtual Value* compile_r() const override { return fp32(con);}
 
 private:
   double con;
@@ -1455,15 +1485,6 @@ private:
 
 class Constboolean: public Rval {
 public:
-  Constboolean(std::string b){
-    if(b.compare("true")){
-      con = true;
-    }
-    else{
-      con = false;
-    }
-    type = new Boolean();
-  }
   Constboolean(bool b){
     con = b;
     type = new Boolean();
@@ -1480,8 +1501,8 @@ public:
   }
   virtual int eval() const override { return 0; } //wrong
   // virtual void sem() override { type = new Boolean(); }
-  virtual Value* compile() const override { return nullptr;}
-  virtual Value* compile_r() const override { return nullptr;}
+  virtual Value* compile() const override { printOn(std::cout); return c32(con);}
+  virtual Value* compile_r() const override { printOn(std::cout); return c32(con);}
 
 private:
   bool con;

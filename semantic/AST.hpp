@@ -26,6 +26,7 @@ public:
 
   // Global LLVM variables related to the generated code.
   static GlobalVariable *TheVars;
+  static GlobalVariable *TheRealVars;
   static GlobalVariable *TheNL;
   static Function *TheWriteInteger;
   static Function *TheWriteString;
@@ -34,6 +35,8 @@ public:
   static Type *i8;
   static Type *i32;
   static Type *i64;
+  static Type *DoubleTyID;
+
 
   // Useful LLVM helper functions.
   ConstantInt* c8(char c) const {
@@ -41,6 +44,9 @@ public:
   }
   ConstantInt* c32(int n) const {
     return ConstantInt::get(TheContext, APInt(32, n, true));
+  }
+  ConstantFP* fp32(double f) const {
+    return ConstantFP::get(TheContext, APFloat(f));
   }
   virtual Value* compile() const = 0;
   virtual Value* compile_r() const = 0;
@@ -61,6 +67,13 @@ public:
         *TheModule, vars_type, false, GlobalValue::PrivateLinkage,
         ConstantAggregateZero::get(vars_type), "vars");
     TheVars->setAlignment(16);
+
+    ArrayType *real_vars_type = ArrayType::get(DoubleTyID, 26);
+    TheRealVars = new GlobalVariable(
+        *TheModule, real_vars_type, false, GlobalValue::PrivateLinkage,
+        ConstantAggregateZero::get(real_vars_type), "real_vars");
+    TheRealVars->setAlignment(16);
+
     // @nl = private constant [2 x i8] c"\0A\00", align 1
     ArrayType *nl_type = ArrayType::get(i8, 2);
     TheNL = new GlobalVariable(
@@ -90,7 +103,6 @@ public:
     Builder.SetInsertPoint(BB);
     // Emit the program code.
     compile();
-    Builder.CreateAdd(c32(1), c32(1), "addtmp");
     Builder.CreateRet(c32(0));
     // Verify the IR.
     bool bad = verifyModule(*TheModule, &errs());
