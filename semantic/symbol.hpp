@@ -43,7 +43,7 @@ public:
   void insertLabel(std::string c, OurType *t) {
     if (locals.find(c) != locals.end()) {
       print();
-      std::cerr << "Duplicate variable " << c << std::endl;
+      std::cerr << "Duplicate variable " << c << "insertLabel" << std::endl;
       exit(1);
     }
     locals[c] = SymbolEntry(t, offset++, c);
@@ -59,7 +59,7 @@ public:
   }
   void insertProcedure(std::string c, OurType *t, Formal_list *f) {
     if (locals.find(c) != locals.end()) {
-      std::cerr << "Duplicate variable " << c << std::endl;
+      std::cerr << "Duplicate variable " << c << "insertProcedure" << std::endl;
       exit(1);
     }
     locals[c] = SymbolEntry(t, offset++, c);
@@ -78,7 +78,7 @@ public:
   }
   void insertFunction(std::string c, OurType *t, Formal_list *f) {
     if (locals.find(c) != locals.end()) {
-      std::cerr << "Duplicate variable " << c << std::endl;
+      std::cerr << "Duplicate variable " << c << "insertFunction" << std::endl;
       exit(1);
     }
     locals[c] = SymbolEntry(t, offset++, c);
@@ -104,6 +104,7 @@ public:
     return functions[c];
   }
   void print(){
+    std::cout<< std::endl;
     for(auto it = locals.cbegin(); it != locals.cend(); ++it)
     {
       if(isProcedure(it->first)){
@@ -225,6 +226,16 @@ public:
     }
     return 0;
   }
+  bool existsGlobal(std::string c){
+    SymbolEntry *e;
+    for (auto i = scopes.rbegin(); i != scopes.rend(); ++i) {
+        e = i->lookup(c);
+        if(e) return true;
+    }
+    std::cerr << "Unknown variable (searched Global)" << c << std::endl;
+    exit(1);
+  }
+
   SymbolEntry *getSymbolEntry(std::string c){
     SymbolEntry *e;
     e = scopes.back().lookup(c);

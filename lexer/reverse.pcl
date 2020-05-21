@@ -1,4 +1,4 @@
-program reverse;
+program reverseprog;
 
   function strlen (var s : array of char) : integer;
   begin

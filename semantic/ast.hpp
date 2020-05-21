@@ -162,7 +162,7 @@ private:
 
 class BinOp: public Rval {
 public:
-  BinOp(Expr *l, char *o, Expr *r): left(l), op(o), right(r) {
+  BinOp(Expr *l, const char *o, Expr *r): left(l), op(o), right(r) {
    }
   ~BinOp() { delete left; delete right; }
   virtual void printOn(std::ostream &out) const override {
@@ -219,6 +219,11 @@ public:
       }
     }
     if(! strcmp(op, "mod") || ! strcmp(op, "div")){
+      left->printOn(std::cout);
+      std::cout<<std::endl;
+      std::cout<<op<<std::endl;
+      right->printOn(std::cout);
+
       if( left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
         type = new Integer();
       }
@@ -359,14 +364,14 @@ public:
 
 private:
   Expr *left;
-  char *op;
+  const char *op;
   Expr *right;
 };
 
 
 class UnOp: public Rval {
 public:
-  UnOp(char *o, Expr *r): op(o), right(r) {}
+  UnOp(const char *o, Expr *r): op(o), right(r) {}
   ~UnOp() { delete right; }
   virtual void printOn(std::ostream &out) const override {
     out << "UnOp(";
@@ -414,7 +419,7 @@ public:
   virtual Value* compile_r() const override { return nullptr;}
 
 private:
-  char *op;
+  const char *op;
   Expr *right;
 };
 
@@ -439,16 +444,8 @@ public:
   virtual void sem() override {
     std::string s = var;
     type = st.lookup(s)->type;
-
-    if(st.existsLastScope(var)){
-      SymbolEntry *en = st.getSymbolEntry(var);
-      offset = en->offset;
-    }
-    else{
-      printOn(std::cout);
-      std::cout<<"Something wrong terribly";
-      exit(1);
-    }
+    SymbolEntry *en = st.lookup(var);
+    offset = en->offset;
   }
   virtual Value* compile() const override {
     // char name[] = { var, '_', 'p', 't', 'r', '\0' };
@@ -1750,15 +1747,6 @@ public:
     return s;
   }
   virtual void sem() override {
-    if(st.getSize() > 2){
-      std::string parentf = st.getParent();
-      if(st.getFormalsFunctionAll(parentf)){
-        st.getFormalsFunctionAll(parentf)->sem();
-      }
-      else if(st.getFormalsProcedureAll(parentf)){
-        st.getFormalsProcedureAll(parentf)->sem();
-      }
-    }
     stmt_list->sem();
   }
 virtual void run() const override {
@@ -2121,6 +2109,7 @@ public:
     else if(localType.compare("forp") == 0){
       header->sem();
       body->sem();
+
     }
     else if(localType.compare("forward") == 0){
       header->semForward();
@@ -2232,6 +2221,15 @@ public:
   }
   virtual void sem() override {
     st.openScope();
+    if(st.getSize() > 2){
+      std::string parentf = st.getParent();
+      if(st.getFormalsFunctionAll(parentf)){
+        st.getFormalsFunctionAll(parentf)->sem();
+      }
+      else if(st.getFormalsProcedureAll(parentf)){
+        st.getFormalsProcedureAll(parentf)->sem();
+      }
+    }
     local_list->sem();
     block->sem();
     if(st.getSize() > 2){

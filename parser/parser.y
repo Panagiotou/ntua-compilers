@@ -94,10 +94,17 @@
 %token<op> T_id
 
 /*operators*/
-%left<op> "+" "-" "="
+%nonassoc<op> "=" ">" "<" ">=" "<=" "<>"
+%left<op> "+" "-" "or"
+%left<op> "*" "/" "div" "mod" "and"
+%nonassoc<op> "not"
+%nonassoc<op> "^"
+%nonassoc<op> "@"
+%nonassoc<op> "[" "]"
+/* %left<op> "+" "-" "="
 %left<op> "*" "div" "mod" "or"
 %left<op> "(" ")" "[" "]" "<=" ">=" "<" ">" "<>" "and" "/" "not"
-%right<op>  "@" "^"
+%right<op>  "@" "^" */
 
 %expect 1
 
@@ -279,23 +286,23 @@ r-value:
  | "nil" { $$ = new NilR(); }
  | callr { $$ = $1; }
  | "@" expr { $$ = new Reference($2); }
- | "not" expr { $$ = new UnOp(operators.back(), $2); operators.pop_back(); }
- | "+" expr { $$ = new UnOp(operators.back(), $2); operators.pop_back(); }
- | "-" expr { $$ = new UnOp(operators.back(), $2); operators.pop_back(); }
- | expr "+" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
- | expr "-" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
- | expr "*" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
- | expr "/" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
- | expr "div" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
- | expr "mod" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
- | expr "or" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
- | expr "and" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
- | expr "=" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
- | expr "<>" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
- | expr "<" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
- | expr "<=" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
- | expr ">" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
- | expr ">=" expr { $$ = new BinOp($1, operators.back(), $3); operators.pop_back(); }
+ | "not" expr { $$ = new UnOp("not", $2);}
+ | "+" expr { $$ = new UnOp("+", $2);}
+ | "-" expr { $$ = new UnOp("-", $2);}
+ | expr "+" expr { $$ = new BinOp($1, "+", $3);  }
+ | expr "-" expr { $$ = new BinOp($1, "-", $3);}
+ | expr "*" expr { $$ = new BinOp($1, "*", $3);}
+ | expr "/" expr { $$ = new BinOp($1, "/", $3);}
+ | expr "div" expr { $$ = new BinOp($1, "div", $3);}
+ | expr "mod" expr { $$ = new BinOp($1, "mod", $3);}
+ | expr "or" expr { $$ = new BinOp($1, "or", $3);}
+ | expr "and" expr { $$ = new BinOp($1, "and", $3);}
+ | expr "=" expr { $$ = new BinOp($1, "=", $3);  }
+ | expr "<>" expr { $$ = new BinOp($1, "<>", $3);}
+ | expr "<" expr { $$ = new BinOp($1, "<", $3);}
+ | expr "<=" expr { $$ = new BinOp($1, "<=", $3);}
+ | expr ">" expr { $$ = new BinOp($1, ">", $3);}
+ | expr ">=" expr { $$ = new BinOp($1, ">=", $3);}
  ;
 
 call:

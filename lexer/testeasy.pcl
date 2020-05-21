@@ -1,6 +1,5 @@
 program solve;
-
-
+var x : boolean;
 begin
-
+  x := 2 + 4 = 1;
 end.
