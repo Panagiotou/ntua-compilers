@@ -89,9 +89,9 @@
 
 %token<num> T_int_const
 %token<re> T_real_const
-%token<var> T_const_char
-%token<sval> T_const_string
-%token<op> T_id
+%token<ch> T_const_char
+%token<stri> T_const_string
+%token<ids> T_id
 
 /*operators*/
 %nonassoc<op> "=" ">" "<" ">=" "<=" "<>"
@@ -130,8 +130,10 @@
   OurType *type;
   int num;
   double re;
-  char var;
+  char *ids;
+  char *stri;
   char *op;
+  char *ch;
 
   std::string* sval;
 }
@@ -192,13 +194,13 @@ local:
  ;
 
 decl_label:
-  T_id id_list ";" { $2->append_begin(ids.back()); ids.pop_back(); $$ = new Label($2); }
+  T_id id_list ";" { $2->append_begin($1); $$ = new Label($2); }
   ;
 
 
 id_list:
   /*nothing*/ { $$ = new Id_list(); }
-  | id_list "," T_id { $1->append_id(ids.back()); ids.pop_back(); $$ = $1; }
+  | id_list "," T_id { $1->append_id($3); $$ = $1; }
   ;
 
 decl_list:
@@ -207,13 +209,13 @@ decl_list:
   ;
 
 decl:
-  T_id id_list ":" type ";" { $2->append_begin(ids.back()); ids.pop_back();$$ = new Decl($2, $4);}
+  T_id id_list ":" type ";" { $2->append_begin($1);$$ = new Decl($2, $4);}
 
 header:
- "procedure" T_id "(" formal formal_list  ")" { $5->append_begin($4); $$ = new Procedure(ids.back(), $5); ids.pop_back(); }
- | "procedure" T_id "(" ")" { $$ = new Procedure(ids.back()); ids.pop_back(); }
- | "function" T_id "(" formal formal_list  ")" ":" type { $5->append_begin($4); $$ = new OurFunction(ids.back(), $8, $5); ids.pop_back();}
- | "function" T_id "(" ")" ":" type { $$ = new OurFunction(ids.back(), $6); ids.pop_back();}
+ "procedure" T_id "(" formal formal_list  ")" { $5->append_begin($4); $$ = new Procedure($2, $5); }
+ | "procedure" T_id "(" ")" { $$ = new Procedure($2); }
+ | "function" T_id "(" formal formal_list  ")" ":" type { $5->append_begin($4); $$ = new OurFunction($2, $8, $5);}
+ | "function" T_id "(" ")" ":" type { $$ = new OurFunction($2, $6);}
  ;
 
 formal_list:
@@ -222,8 +224,8 @@ formal_list:
   ;
 
 formal:
-  "var" T_id  id_list ":" type { $3->append_begin(ids.back()); ids.pop_back(); $$ = new Formal($3, $5, true); }
-  |T_id  id_list ":" type { $2->append_begin(ids.back()); ids.pop_back(); $$ = new Formal($2, $4, false); }
+  "var" T_id  id_list ":" type { $3->append_begin($2); $$ = new Formal($3, $5, true); }
+  |T_id  id_list ":" type { $2->append_begin($1); $$ = new Formal($2, $4, false); }
   ;
 
 type:
@@ -253,8 +255,8 @@ stmt:
   | "if" expr "then" stmt { $$ = new If($2, $4); }
   | "if" expr "then" stmt "else" stmt { $$ = new If($2, $4, $6); }
   | "while" expr "do" stmt { $$ = new While($2, $4); }
-  | T_id ":" stmt { $$ = new IdLabel(ids.back(), $3); ids.pop_back(); }
-  | "goto" T_id { $$ = new Goto(ids.back()); ids.pop_back(); }
+  | T_id ":" stmt { $$ = new IdLabel($1, $3); }
+  | "goto" T_id { $$ = new Goto($2); }
   | "return" { $$ = new Return(); }
   | "new" "[" expr "]" l-value { $$ = new New($3, $5); }
   | "new" l-value { $$ = new New($2); }
@@ -268,20 +270,20 @@ expr:
  ;
 
 l-value:
- T_id { $$ = new Id(ids.back()); ids.pop_back(); }
+ T_id { $$ = new Id($1); }
  | "result" { $$ = new Result(); }
- | T_const_string { $$ = new Conststring(constStrings.back()); constStrings.pop_back();}
+ | T_const_string { $$ = new Conststring($1); }
  | l-value "[" expr "]" { $$ = new ArrayItem($1, $3); }
  | "(" l-value ")" { $$ = $2; }
  | expr "^" { $$ = new Dereference($1); }
  ;
 
 r-value:
- T_int_const { $$ = new Constint(constInts.back()); constInts.pop_back(); }
+ T_int_const { $$ = new Constint($1); }
  | "true" { $$ = new Constboolean(1); }
  | "false" { $$ = new Constboolean(0); }
- | T_real_const { $$ = new Constreal(constReals.back()); constReals.pop_back(); }
- | T_const_char { $$ = new Constchar(constChars.back()); constChars.pop_back(); }
+ | T_real_const { $$ = new Constreal($1); }
+ | T_const_char { $$ = new Constchar($1); }
  | "(" r-value ")" { $$ = $2; }
  | "nil" { $$ = new NilR(); }
  | callr { $$ = $1; }
@@ -306,13 +308,13 @@ r-value:
  ;
 
 call:
-  T_id "(" expr  expr_list  ")" { $4->append_begin($3); $$ = new Call(ids.back(), $4); ids.pop_back(); }
-  |T_id "(" ")" { $$ = new Call(ids.back()); ids.pop_back(); }
+  T_id "(" expr  expr_list  ")" { $4->append_begin($3); $$ = new Call($1, $4); }
+  |T_id "(" ")" { $$ = new Call($1); }
   ;
 
 callr:
-  T_id "(" expr  expr_list  ")" { $4->append_begin($3); $$ = new Callr(ids.back(), $4); ids.pop_back();}
-  |T_id "(" ")" { $$ = new Callr(ids.back()); ids.pop_back();}
+  T_id "(" expr  expr_list  ")" { $4->append_begin($3); $$ = new Callr($1, $4);}
+  |T_id "(" ")" { $$ = new Callr($1);}
   ;
 
 expr_list:
@@ -327,16 +329,6 @@ expr_list:
 int main() {
 
   int result = yyparse();
-  bool first = true;
-  if(DEBUGPARSER){
-    std::cout << "\n\nRemaining ids: ";
-    for (char* id : ids) {
-      if (!first) std::cout << ", ";
-      first = false;
-      if(id) std::cout << id;
-    }
-    std::cout << "\n";
-  }
   if (result == 0) printf("\nSuccess.\n");
   return result;
 }

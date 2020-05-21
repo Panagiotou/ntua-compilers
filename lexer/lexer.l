@@ -9,11 +9,6 @@
   #define T_eof  0
 
   std::vector<char *> ids;
-  std::vector<int> constInts;
-  std::vector<double> constReals;
-  std::vector<char> constChars;
-  std::vector<char *> constStrings;
-  std::vector<char *> operators;
 
 %}
 L [A-DF-Za-df-z]
@@ -30,13 +25,13 @@ Esc \\[ "t""n""r""0"\'\"\\]
 
 
 %%
-"and"             { operators.push_back(strdup(yytext)); return T_and;}
+"and"             { yylval.op = strdup(yytext); return T_and;}
 "array"           {return T_array;}
 "begin"           {return T_begin;}
 "boolean"         {return T_boolean;}
 "char"            {return T_char;}
 "dispose"         {return T_dispose;}
-"div"             { operators.push_back(strdup(yytext)); return T_div;}
+"div"             { yylval.op = strdup(yytext); return T_div;}
 "do"              {return T_do;}
 "else"            {return T_else;}
 "end"             {return T_end;}
@@ -47,12 +42,12 @@ Esc \\[ "t""n""r""0"\'\"\\]
 "if"              {return T_if;}
 "integer"         {return T_integer;}
 "label"           {return T_label;}
-"mod"             { operators.push_back(strdup(yytext)); return T_mod;}
+"mod"             { yylval.op = strdup(yytext); return T_mod;}
 "new"             {return T_new;}
 "nil"             {return T_nil;}
-"not"             { operators.push_back(strdup(yytext)); return T_not;}
+"not"             { yylval.op = strdup(yytext); return T_not;}
 "of"              {return T_of;}
-"or"              { operators.push_back(strdup(yytext)); return T_or;}
+"or"              { yylval.op = strdup(yytext); return T_or;}
 "procedure"       {return T_procedure;}
 "program"         {return T_program;}
 "real"            {return T_real;}
@@ -63,16 +58,16 @@ Esc \\[ "t""n""r""0"\'\"\\]
 "var"             {return T_var;}
 "while"           {return T_while;}
 
-"=" { operators.push_back(strdup(yytext)); return T_op_eq;}
-">" { operators.push_back(strdup(yytext)); return T_op_g;}
-"<" {operators.push_back(strdup(yytext)); return T_op_l;}
-"<>" { operators.push_back(strdup(yytext)); return T_op_neq;}
-"<=" { operators.push_back(strdup(yytext)); return T_op_leq;}
-">=" { operators.push_back(strdup(yytext)); return T_op_geq;}
-"+" { operators.push_back(strdup(yytext)); return T_op_p;}
-"-" { operators.push_back(strdup(yytext)); return T_op_m;}
-"*" { operators.push_back(strdup(yytext)); return T_op_mul;}
-"/" { operators.push_back(strdup(yytext)); return T_op_d;}
+"=" { yylval.op = strdup(yytext); return T_op_eq;}
+">" { yylval.op = strdup(yytext); return T_op_g;}
+"<" {yylval.op = strdup(yytext); return T_op_l;}
+"<>" { yylval.op = strdup(yytext); return T_op_neq;}
+"<=" { yylval.op = strdup(yytext); return T_op_leq;}
+">=" { yylval.op = strdup(yytext); return T_op_geq;}
+"+" { yylval.op = strdup(yytext); return T_op_p;}
+"-" { yylval.op = strdup(yytext); return T_op_m;}
+"*" { yylval.op = strdup(yytext); return T_op_mul;}
+"/" { yylval.op = strdup(yytext); return T_op_d;}
 "^" {return T_op_point;}
 "@" {return T_op_addr;}
 
@@ -86,17 +81,16 @@ Esc \\[ "t""n""r""0"\'\"\\]
 "[" {return T_op_lbr;}
 "]" {return T_op_rbr;}
 
-({L}|{E})({L}|{E}|{D}|"_")*               { ids.push_back(strdup(yytext)); return T_id; }
-{D}+				                              {constInts.push_back(std::stoi(yytext)); return T_int_const;}
-({D}+("."{D}*({E}("+"|"-")?{D}+)?)?)      {constReals.push_back(std::stod(yytext)); return T_real_const;}
-\'(({Esc})|[^\"\'\\])\'                   {constChars.push_back(strdup(yytext)[0]); return T_const_char;}        /*'*/
-\"([^\'\"\r\n\\]|({Esc}))*\"              {constStrings.push_back(strdup(yytext)); return T_const_string;}      /*"*/
+({L}|{E})({L}|{E}|{D}|"_")*               {yylval.ids = strdup(yytext); return T_id; }
+{D}+				                              {yylval.num = std::stoi(yytext); return T_int_const;}
+({D}+("."{D}*({E}("+"|"-")?{D}+)?)?)      {yylval.re = std::stod(yytext); return T_real_const;}
+\'(({Esc})|[^\"\'\\])\'                   {yylval.ch = strdup(yytext); return T_const_char;}        /*'*/
+\"([^\'\"\r\n\\]|({Esc}))*\"              {yylval.stri = strdup(yytext); return T_const_string;}      /*"*/
 
 
 [()+\-/%*=^\[\];:!,<>\.]          { return yytext[0]; }
 
 
-":="                               {return T_op_assign;}
 
 
 

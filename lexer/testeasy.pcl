@@ -1,5 +1,5 @@
 program solve;
 var x : boolean;
 begin
-  x := 2 + 4 = 1;
+  x := 2.1 + 4.3 = 1.3;
 end.

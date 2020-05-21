@@ -219,11 +219,6 @@ public:
       }
     }
     if(! strcmp(op, "mod") || ! strcmp(op, "div")){
-      left->printOn(std::cout);
-      std::cout<<std::endl;
-      std::cout<<op<<std::endl;
-      right->printOn(std::cout);
-
       if( left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
         type = new Integer();
       }
@@ -1416,7 +1411,7 @@ private:
 
 class Constchar: public Rval {
 public:
-  Constchar(char c): con(c) {
+  Constchar(char *c): con(c) {
     type = new Char();}
   virtual void printOn(std::ostream &out) const override {
     out << "Constchar(" << con << ")";
@@ -1434,7 +1429,7 @@ public:
   virtual Value* compile_r() const override { return nullptr;}
 
 private:
-  char con;
+  char *con;
 };
 
 class Conststring: public Lval {
