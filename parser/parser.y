@@ -6,7 +6,7 @@
 
   SymbolTable st;
   std::vector<int> rt_stack;
-  #define DEBUGPARSER true
+  #define DEBUGPARSER false
 
   LLVMContext AST::TheContext;
   IRBuilder<> AST::Builder(TheContext);
@@ -171,7 +171,7 @@ program:
 
     $4->sem();
 
-    /* $4->llvm_compile_and_dump(); */
+    $4->llvm_compile_and_dump();
     // std::cout << "AST: " << *$1 << std::endl;
     //$1->run();
     st.closeScope();

@@ -1,0 +1,9 @@
+program p;
+var a : boolean;
+var b : boolean;
+begin
+b := true;
+a := false;
+a := a and b;
+b := b or a;
+end.

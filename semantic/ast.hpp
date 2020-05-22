@@ -283,8 +283,14 @@ public:
       return Builder.CreateAdd(l, r, "addtmp");
     }
 
-    if(! strcmp(op, "-")) return Builder.CreateSub(l, r, "subtmp");
-    if(! strcmp(op, "*")) return Builder.CreateMul(l, r, "multmp");
+    if(! strcmp(op, "-")){
+      if((left->type->val == TYPE_REAL) && (right->type->val == TYPE_REAL)) return Builder.CreateFSub(l, r, "fsubtmp");
+      return Builder.CreateSub(l, r, "subtmp");
+    }
+    if(! strcmp(op, "*")){
+      if((left->type->val == TYPE_REAL) && (right->type->val == TYPE_REAL)) return Builder.CreateFMul(l, r, "fmultmp");
+      return Builder.CreateMul(l, r, "multmp");
+    }
     if(! strcmp(op, "/")) return Builder.CreateFDiv(l, r, "fdivtmp"); //must be float?
     // if(! strcmp(op, "=")){
     //   if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
@@ -350,8 +356,14 @@ public:
       if((left->type->val == TYPE_REAL) && (right->type->val == TYPE_REAL)) return Builder.CreateFAdd(l, r, "faddtmp");
       return Builder.CreateAdd(l, r, "addtmp");
     }
-    if(! strcmp(op, "-")) return Builder.CreateSub(l, r, "subtmp");
-    if(! strcmp(op, "*")) return Builder.CreateMul(l, r, "multmp");
+    if(! strcmp(op, "-")){
+      if((left->type->val == TYPE_REAL) && (right->type->val == TYPE_REAL)) return Builder.CreateFSub(l, r, "fsubtmp");
+      return Builder.CreateSub(l, r, "subtmp");
+    }
+    if(! strcmp(op, "*")){
+      if((left->type->val == TYPE_REAL) && (right->type->val == TYPE_REAL)) return Builder.CreateFMul(l, r, "fmultmp");
+      return Builder.CreateMul(l, r, "multmp");
+    }
     if(! strcmp(op, "/")) return Builder.CreateFDiv(l, r, "fdivtmp"); //must be float?
 
 
@@ -1501,8 +1513,8 @@ public:
   }
   virtual int eval() const override { return 0; } //wrong
   // virtual void sem() override { type = new Boolean(); }
-  virtual Value* compile() const override { printOn(std::cout); return c32(con);}
-  virtual Value* compile_r() const override { printOn(std::cout); return c32(con);}
+  virtual Value* compile() const override { return c32(con);}
+  virtual Value* compile_r() const override { return c32(con);}
 
 private:
   bool con;

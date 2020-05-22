@@ -1,0 +1,11 @@
+program p;
+var a : integer;
+var b : integer;
+begin
+b := 2;
+a := 2;
+a := a + b + 2;
+a := (a - b - 2)*1;
+a := a mod b;
+a := a div b + 2;
+end.

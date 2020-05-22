@@ -1,0 +1,12 @@
+program p;
+var a : real;
+var b : real;
+begin
+b := 2.1;
+a := 2.1;
+a := a + b + 2.6;
+a := a + 0.1;
+b := b - a + 0.2;
+b := a/b + 1.0;
+b := (b - 1.0) * b
+end.
