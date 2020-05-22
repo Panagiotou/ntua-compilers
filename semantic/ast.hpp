@@ -227,7 +227,12 @@ public:
       }
     }
     if(! strcmp(op, "=") || ! strcmp(op, "<>")){
-      if(check_number(left, right) || ((left->type->val == right->type->val) && (left->type->val != TYPE_ARRAY))){
+      if(!(*left->type == *right->type)){
+        std::cout << "Type missmatch in comparison!\n";
+        printOn(std::cout);
+        exit(1);
+      }
+      if(check_number(left, right) || ((left->type->val == right->type->val) && (left->type->val != TYPE_ARRAY)) || (left->type->val == TYPE_NIL || right->type->val == TYPE_NIL)){
         type = new Boolean();
       }
       else{
@@ -980,7 +985,7 @@ public:
     if(st.isProcedure(s)){
 
       std::vector<Formal *> formal_list;
-      formal_list = st.getFormalsProcedureAll(s)->getList();
+      if(st.getFormalsProcedureAll(s)) formal_list = st.getFormalsProcedureAll(s)->getList();
       int i = 0;
       int argumentsExpected = 0;
       int argumentsProvided = 0;
@@ -1106,7 +1111,7 @@ public:
     st.lookup(s);
     if(st.isProcedure(s)){
       std::vector<Formal *> formal_list;
-      formal_list = st.getFormalsProcedureAll(s)->getList();
+      if(st.getFormalsProcedureAll(s)) formal_list = st.getFormalsProcedureAll(s)->getList();
       int i = 0;
       int argumentsExpected = 0;
       int argumentsProvided = 0;
@@ -1435,7 +1440,7 @@ private:
 class Conststring: public Lval {
 public:
   Conststring(char *c): con(c) {
-    type = new Array(new Char());}
+    type = new Array(new Char(), strlen(c) - 1);}
   virtual void printOn(std::ostream &out) const override {
     out << "Conststring(" << con << ")";
   }
@@ -1916,7 +1921,7 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "Procedure(";
     if(id) out << id << " ";
-    formal_list->printOn(out);
+    if(formal_list) formal_list->printOn(out);
     out << ")";
   }
   virtual std::string getStringName() override {
@@ -1925,7 +1930,7 @@ public:
     std::string var;
     var = id;
     if(id) s += var + " ";
-    s += formal_list->getStringName();
+    if(formal_list) s += formal_list->getStringName();
     s += ")";
     return s;
   }
@@ -1939,8 +1944,14 @@ public:
       //Procedure was previously forward declared
       std::string prev;
       std::string now;
-      prev = st.getFormalsProcedure(s)->getStringName();
-      now = formal_list->getStringName();
+      if(st.getFormalsProcedure(s)){
+        prev = st.getFormalsProcedure(s)->getStringName();
+        now = formal_list->getStringName();
+      }
+      else{
+        prev = "";
+        now = "";
+      }
       if(prev.compare(now)){
         std::cout << "Procedure " << s << " was previously declared with arguments: " << prev << " but now it is defined with arguments " << now << "\n";
         exit(1);
@@ -1973,7 +1984,7 @@ public:
   virtual void printOn(std::ostream &out) const override {
     out << "OurFunction(";
     out << id << " ";
-    formal_list->printOn(out);
+    if(formal_list) formal_list->printOn(out);
     type->printOn(out);
     out << ")";
   }
@@ -1983,7 +1994,7 @@ public:
     std::string var;
     var = id;
     s += var + " ";
-    s += formal_list->getStringName();
+    if(formal_list) s += formal_list->getStringName();
     s += type->getStringName();
     s += ")";
     return s;
@@ -2003,8 +2014,14 @@ public:
       //Function was previously forward declared
       std::string prev;
       std::string now;
-      prev = st.getFormalsFunction(s)->getStringName();
-      now = formal_list->getStringName();
+      if(st.getFormalsProcedure(s)){
+        prev = st.getFormalsProcedure(s)->getStringName();
+        now = formal_list->getStringName();
+      }
+      else{
+        prev = "";
+        now = "";
+      }
       if(prev.compare(now)){
         std::cout << "Function " << s << " was previously declared with arguments: " << prev << " but now it is defined with arguments " << now << "\n";
         exit(1);

@@ -1,4 +1,5 @@
 program crosscall;
+forward procedure g();
 
 procedure f();
 begin
