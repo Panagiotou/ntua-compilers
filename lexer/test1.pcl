@@ -2,10 +2,9 @@ program p;
 var x : integer;
 var b : boolean;
 begin
-x := 0;
-b := x=0;
-if(b and false) then
-begin
-x := x + 1;
-end;
+x:=0;
+while(x<10) do
+  begin
+  x:= x + 1
+  end;
 end.

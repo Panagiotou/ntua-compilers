@@ -298,21 +298,19 @@ public:
           return Builder.CreateFCmpOEQ(l, r, "feqtmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
       }
       else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
-        l->print(errs());
-        r->print(errs());
         Value *v = Builder.CreateICmpEQ(l, r, "eqtmp");
         v->print(errs());
         return Builder.CreateICmpEQ(l, r, "eqtmp");
       }
     }
-    // if(! strcmp(op, "<")){
-    //   if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
-    //       return Builder.CreateFCmpOLT(l, r, "flttmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
-    //   }
-    //   else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
-    //     return Builder.CreateICmpSLT(l, r, "lttmp"); // signed less than
-    //   }
-    // }
+    if(! strcmp(op, "<")){
+      if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
+          return Builder.CreateFCmpOLT(l, r, "flttmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
+      }
+      else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
+        return Builder.CreateICmpSLT(l, r, "lttmp"); // signed less than
+      }
+    }
     // if(! strcmp(op, ">")){
     //   if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
     //       return Builder.CreateFCmpOGT(l, r, "fgttmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
@@ -378,7 +376,14 @@ public:
         return Builder.CreateICmpEQ(l, r, "eqtmp");
       }
     }
-
+    if(! strcmp(op, "<")){
+      if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
+          return Builder.CreateFCmpOLT(l, r, "flttmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
+      }
+      else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
+        return Builder.CreateICmpSLT(l, r, "lttmp"); // signed less than
+      }
+    }
     if(! strcmp(op, "div")) return Builder.CreateSDiv(l, r, "divtmp");
     if(! strcmp(op, "mod")) return Builder.CreateSRem(l, r, "modtmp");
     if(! strcmp(op, "or")) return Builder.CreateOr(l, r, "ortmp");
@@ -480,6 +485,9 @@ public:
     std::string s = var;
     Value *V = st.lookup(s)->val;
     Value *ret = Builder.CreateLoad(V, s);
+    //This is for testing only
+    // Value *n64 = Builder.CreateZExt(ret, i64, "ext");
+    // Builder.CreateCall(TheWriteInteger, std::vector<Value *> { n64 });
     return ret;
   }
 
@@ -1693,7 +1701,7 @@ public:
   }
   virtual Value* compile_r() const override {
     Value *v = cond->compile_r();
-    
+
     Function *TheFunction = Builder.GetInsertBlock()->getParent();
     BasicBlock *ThenBB =
       BasicBlock::Create(TheContext, "then", TheFunction);
@@ -1755,9 +1763,59 @@ public:
       stmt->run();
     }
   }
-  virtual Value* compile() const override { return nullptr;}
-  virtual Value* compile_r() const override { return nullptr;}
+  virtual Value* compile() const override {
+    Value *n = expr->compile_r();
+    BasicBlock *PrevBB = Builder.GetInsertBlock();
+    Function *TheFunction = PrevBB->getParent();
+    BasicBlock *LoopBB =
+      BasicBlock::Create(TheContext, "loop", TheFunction);
+    BasicBlock *BodyBB =
+      BasicBlock::Create(TheContext, "body", TheFunction);
+    BasicBlock *AfterBB =
+      BasicBlock::Create(TheContext, "endwhile", TheFunction);
+    Builder.CreateBr(LoopBB);
+    Builder.SetInsertPoint(LoopBB);
+    PHINode *phi_iter = Builder.CreatePHI(i1, 2, "iter");
+    phi_iter->addIncoming(n, PrevBB);
+    Value *loop_cond = Builder.CreateICmpNE(phi_iter, c1(0), "loop_cond");
+    Builder.CreateCondBr(loop_cond, BodyBB, AfterBB);
+    Builder.SetInsertPoint(BodyBB);
 
+    stmt->compile();
+    n = expr->compile_r();
+
+    phi_iter->addIncoming(n, Builder.GetInsertBlock());
+    Builder.CreateBr(LoopBB);
+    Builder.SetInsertPoint(AfterBB);
+
+    return nullptr;
+  }
+  virtual Value* compile_r() const override {
+    Value *n = expr->compile_r();
+    BasicBlock *PrevBB = Builder.GetInsertBlock();
+    Function *TheFunction = PrevBB->getParent();
+    BasicBlock *LoopBB =
+      BasicBlock::Create(TheContext, "loop", TheFunction);
+    BasicBlock *BodyBB =
+      BasicBlock::Create(TheContext, "body", TheFunction);
+    BasicBlock *AfterBB =
+      BasicBlock::Create(TheContext, "endwhile", TheFunction);
+    Builder.CreateBr(LoopBB);
+    Builder.SetInsertPoint(LoopBB);
+    PHINode *phi_iter = Builder.CreatePHI(i1, 2, "iter");
+    phi_iter->addIncoming(n, PrevBB);
+    Value *loop_cond = Builder.CreateICmpNE(phi_iter, c1(0), "loop_cond");
+    Builder.CreateCondBr(loop_cond, BodyBB, AfterBB);
+    Builder.SetInsertPoint(BodyBB);
+
+    stmt->compile();
+    n = expr->compile_r();
+
+    phi_iter->addIncoming(n, Builder.GetInsertBlock());
+    Builder.CreateBr(LoopBB);
+    Builder.SetInsertPoint(AfterBB);
+    return nullptr;
+    }
 private:
   Expr *expr;
   Stmt *stmt;

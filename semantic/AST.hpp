@@ -107,7 +107,7 @@ public:
     Builder.SetInsertPoint(BB);
     // Emit the program code.
     compile();
-    TheModule->print(outs(), nullptr);
+    // TheModule->print(outs(), nullptr);
     Builder.CreateRet(c32(0));
     // Verify the IR.
     bool bad = verifyModule(*TheModule, &errs());

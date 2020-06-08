@@ -334,6 +334,6 @@ expr_list:
 int main() {
 
   int result = yyparse();
-  if (result == 0) printf("\nSuccess.\n");
+  if (result == 0 && DEBUGPARSER) printf("\nSuccess.\n");
   return result;
 }
