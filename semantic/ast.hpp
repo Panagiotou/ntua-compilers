@@ -275,9 +275,9 @@ public:
   }
   virtual Value* compile() const override {
     // printOn(std::cout);
-    Value *l = left->compile();
+    Value *l = left->compile_r();
     // l = Builder.CreateLoad(l);
-    Value *r = right->compile();
+    Value *r = right->compile_r();
     if(! strcmp(op, "+")){
       if((left->type->val == TYPE_REAL) && (right->type->val == TYPE_REAL)) return Builder.CreateFAdd(l, r, "faddtmp");
       return Builder.CreateAdd(l, r, "addtmp");
@@ -292,14 +292,19 @@ public:
       return Builder.CreateMul(l, r, "multmp");
     }
     if(! strcmp(op, "/")) return Builder.CreateFDiv(l, r, "fdivtmp"); //must be float?
-    // if(! strcmp(op, "=")){
-    //   if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
-    //       return Builder.CreateFCmpOEQ(l, r, "feqtmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
-    //   }
-    //   else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
-    //     return Builder.CreateICmpEQ(l, r, "eqtmp");
-    //   }
-    // }
+    if(! strcmp(op, "=")){
+      if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
+
+          return Builder.CreateFCmpOEQ(l, r, "feqtmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
+      }
+      else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
+        l->print(errs());
+        r->print(errs());
+        Value *v = Builder.CreateICmpEQ(l, r, "eqtmp");
+        v->print(errs());
+        return Builder.CreateICmpEQ(l, r, "eqtmp");
+      }
+    }
     // if(! strcmp(op, "<")){
     //   if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
     //       return Builder.CreateFCmpOLT(l, r, "flttmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
@@ -365,7 +370,14 @@ public:
       return Builder.CreateMul(l, r, "multmp");
     }
     if(! strcmp(op, "/")) return Builder.CreateFDiv(l, r, "fdivtmp"); //must be float?
-
+    if(! strcmp(op, "=")){
+      if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
+          return Builder.CreateFCmpOEQ(l, r, "feqtmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
+      }
+      else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
+        return Builder.CreateICmpEQ(l, r, "eqtmp");
+      }
+    }
 
     if(! strcmp(op, "div")) return Builder.CreateSDiv(l, r, "divtmp");
     if(! strcmp(op, "mod")) return Builder.CreateSRem(l, r, "modtmp");
@@ -1658,9 +1670,48 @@ public:
     else if (stmt2 != nullptr)
       stmt2->run();
   }
-  virtual Value* compile() const override { return nullptr;}
-  virtual Value* compile_r() const override { return nullptr;}
-
+  virtual Value* compile() const override {
+    Value *v = cond->compile();
+    Value *condV = Builder.CreateICmpNE(v, c32(0), "if_cond");
+    Function *TheFunction = Builder.GetInsertBlock()->getParent();
+    BasicBlock *ThenBB =
+      BasicBlock::Create(TheContext, "then", TheFunction);
+    BasicBlock *ElseBB =
+      BasicBlock::Create(TheContext, "else", TheFunction);
+    BasicBlock *AfterBB =
+      BasicBlock::Create(TheContext, "endif", TheFunction);
+    Builder.CreateCondBr(condV, ThenBB, ElseBB);
+    Builder.SetInsertPoint(ThenBB);
+    stmt1->compile();
+    Builder.CreateBr(AfterBB);
+    Builder.SetInsertPoint(ElseBB);
+    if (stmt2 != nullptr)
+      stmt2->compile();
+    Builder.CreateBr(AfterBB);
+    Builder.SetInsertPoint(AfterBB);
+    return nullptr;
+  }
+  virtual Value* compile_r() const override {
+    Value *v = cond->compile();
+    Value *cond = Builder.CreateICmpNE(v, c32(0), "if_cond");
+    Function *TheFunction = Builder.GetInsertBlock()->getParent();
+    BasicBlock *ThenBB =
+      BasicBlock::Create(TheContext, "then", TheFunction);
+    BasicBlock *ElseBB =
+      BasicBlock::Create(TheContext, "else", TheFunction);
+    BasicBlock *AfterBB =
+      BasicBlock::Create(TheContext, "endif", TheFunction);
+    Builder.CreateCondBr(cond, ThenBB, ElseBB);
+    Builder.SetInsertPoint(ThenBB);
+    stmt1->compile();
+    Builder.CreateBr(AfterBB);
+    Builder.SetInsertPoint(ElseBB);
+    if (stmt2 != nullptr)
+      stmt2->compile();
+    Builder.CreateBr(AfterBB);
+    Builder.SetInsertPoint(AfterBB);
+    return nullptr;
+  }
 private:
   Expr *cond;
   Stmt *stmt1;
