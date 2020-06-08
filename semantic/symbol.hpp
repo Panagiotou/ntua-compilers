@@ -10,8 +10,11 @@ struct SymbolEntry {
   OurType *type;
   int offset;
   std::string s;
+  AllocaInst* val;
+
   SymbolEntry() {}
   SymbolEntry(OurType *t, int ofs, std::string c) : type(t), offset(ofs), s(c){}
+  SymbolEntry(OurType *t, int ofs, std::string c, AllocaInst *v) : type(t), offset(ofs), s(c), val(v) {}
 };
 
 class Formal_list;
@@ -33,6 +36,20 @@ public:
       exit(1);
     }
     locals[c] = SymbolEntry(t, offset++, c);
+    ++size;
+    procedures[c] = false;
+    procedureFormals[c] = nullptr;
+    functions[c] = false;
+    functionFormals[c] = nullptr;
+    label[c] = false;
+  }
+  void insert(std::string c, OurType *t, AllocaInst *v) {
+    if (locals.find(c) != locals.end()) {
+      print();
+      std::cerr << "Duplicate variable " << c << std::endl;
+      exit(1);
+    }
+    locals[c] = SymbolEntry(t, offset++, c, v);
     ++size;
     procedures[c] = false;
     procedureFormals[c] = nullptr;
@@ -188,6 +205,7 @@ private:
   std::map<std::string , Formal_list *> functionFormals;
   std::map<std::string , bool> label;
   std::map<std::string , Stmt *> labelStmt;
+
   int offset;
   int size;
 };
@@ -271,6 +289,7 @@ public:
   }
   int getSizeOfCurrentScope() const { return scopes.back().getSize(); }
   void insert(std::string c, OurType *t) { scopes.back().insert(c, t); }
+  void insert(std::string c, OurType *t, AllocaInst *v) { scopes.back().insert(c, t, v); }
   bool isProcedure(std::string s){
     for (auto i = scopes.rbegin(); i != scopes.rend(); ++i) {
       if(i->exists(s)) return i->isProcedure(s);

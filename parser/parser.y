@@ -170,11 +170,15 @@ program:
     if(DEBUGPARSER) $4->printOn(std::cout);
 
     $4->sem();
+    st.closeScope();
+    st.openScope();
 
     $4->llvm_compile_and_dump();
+
+    st.closeScope();
+
     // std::cout << "AST: " << *$1 << std::endl;
     //$1->run();
-    st.closeScope();
   }
   ;
 

@@ -460,41 +460,14 @@ public:
     offset = en->offset;
   }
   virtual Value* compile() const override {
-    // char name[] = { var, '_', 'p', 't', 'r', '\0' };
-    Value *v;
-    if(type->val == TYPE_INTEGER){
-      v = Builder.CreateGEP(
-          TheVars, std::vector<Value *>{ c32(0), c32(offset) }, var);
-    }
-    else if(type->val == TYPE_REAL){
-      v = Builder.CreateGEP(
-          TheRealVars, std::vector<Value *>{ fp32(0), c32(offset) }, var);
-    }
-    else{
-      v = Builder.CreateGEP(
-          TheVars, std::vector<Value *>{ c32(0), c32(offset) }, var);
-    }
-    // name[1] = '\0';
-    // Value *ret = Builder.CreateLoad(v, var);
-    return v;
+    std::string s = var;
+    AllocaInst *Alloca = st.lookup(s)->val;
+    return Alloca;
   }
   virtual Value* compile_r() const override {
-    // char name[] = { var, '_', 'p', 't', 'r', '\0' };
-    Value *v;
-    if(type->val == TYPE_INTEGER){
-      v = Builder.CreateGEP(
-          TheVars, std::vector<Value *>{ c32(0), c32(offset) }, var);
-    }
-    else if(type->val == TYPE_REAL){
-      v = Builder.CreateGEP(
-          TheRealVars, std::vector<Value *>{ fp32(0), c32(offset) }, var);
-    }
-    else{
-      v = Builder.CreateGEP(
-          TheVars, std::vector<Value *>{ c32(0), c32(offset) }, var);
-    }
-    // name[1] = '\0';
-    Value *ret = Builder.CreateLoad(v, var);
+    std::string s = var;
+    Value *V = st.lookup(s)->val;
+    Value *ret = Builder.CreateLoad(V, s);
     return ret;
   }
 
@@ -763,12 +736,14 @@ public:
   virtual Value* compile() const override {
     Value *lhs = lval->compile();
     Value *rhs = exprRight->compile_r();
-    return Builder.CreateStore(rhs, lhs);
+    Value * ret = Builder.CreateStore(rhs, lhs);
+    return ret;
    }
   virtual Value* compile_r() const override {
     Value *lhs = lval->compile();
     Value *rhs = exprRight->compile_r();
-    return Builder.CreateStore(rhs, lhs);
+    Value * ret = Builder.CreateStore(rhs, lhs);
+    return ret;
    }
 
 private:
@@ -1850,6 +1825,28 @@ public:
     }
   }
   virtual Value* compile() const override {
+
+    for (char *id : id_list->getlist()) {
+      std::string var = id;
+      // Value *v;
+      // Value *V = st.lookup(s)->val;
+
+      AllocaInst *Alloca;
+
+      if(type->val == TYPE_INTEGER){
+        Alloca = Builder.CreateAlloca(IntegerType::get(TheContext, 32), 0, var);
+        // Alloca->print(errs());
+      }
+      else if(type->val == TYPE_REAL){
+        Alloca = Builder.CreateAlloca(Type::getDoubleTy(TheContext), 0, var);
+      }
+      else{
+        Alloca = Builder.CreateAlloca(IntegerType::get(TheContext, 32), 0, var);
+      }
+
+      // name[1] = '\0';
+      st.insert(var, type, Alloca);
+    }
     // for (char *id : id_list->getlist()) {
     //   std::string var = id;
     //   int offset = 0;
@@ -1863,6 +1860,37 @@ public:
     return nullptr;
   }
   virtual Value* compile_r() const override {
+    for (char *id : id_list->getlist()) {
+      std::string var = id;
+      // Value *v;
+      // Value *V = st.lookup(s)->val;
+
+      AllocaInst *Alloca;
+
+      if(type->val == TYPE_INTEGER){
+        Alloca = Builder.CreateAlloca(IntegerType::get(TheContext, 32), 0, var);
+      }
+      else if(type->val == TYPE_REAL){
+        Alloca = Builder.CreateAlloca(Type::getDoubleTy(TheContext), 0, var);
+      }
+      else{
+        Alloca = Builder.CreateAlloca(IntegerType::get(TheContext, 32), 0, var);
+
+      }
+      // name[1] = '\0';
+      // Value *ret = Builder.CreateLoad(v, var);
+      st.insert(var, type, Alloca);
+    }
+    // for (char *id : id_list->getlist()) {
+    //   std::string var = id;
+    //   int offset = 0;
+    //   char name[] = { *var, '_', 'p', 't', 'r', '\0' };
+    //   Value *v = Builder.CreateGEP(
+    //       TheVars, std::vector<Value *>{ c32(0), c32(offset)}, var);
+    //   // name[1] = '\0';
+    //   Builder.CreateLoad(v, var);
+    //   return v;
+    // }
     return nullptr;
   }
 
@@ -2294,13 +2322,21 @@ public:
     return s;
   }
   virtual Value* compile() const override {
+    st.openScope();
+
     local_list->compile();
     block->compile();
+    st.closeScope();
+
     return nullptr;
   }
   virtual Value* compile_r() const override {
+    st.openScope();
+
     local_list->compile_r();
     block->compile_r();
+    st.closeScope();
+
     return nullptr;
   }
 

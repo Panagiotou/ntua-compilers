@@ -1,12 +1,6 @@
 program p;
-var d : integer;
 var x : integer;
-var a : integer;
-var b : integer;
-var boo : real;
-var loo : real;
-var voo : real;
 begin
-loo := 1.2;
-boo := loo + 2.9;
+x := 0;
+x := x + 1;
 end.
