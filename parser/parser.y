@@ -19,6 +19,7 @@
   Function *AST::TheWriteInteger;
   Function *AST::TheWriteString;
 
+  Type *AST::i1 = IntegerType::get(TheContext, 1);
   Type *AST::i8 = IntegerType::get(TheContext, 8);
   Type *AST::i32 = IntegerType::get(TheContext, 32);
   Type *AST::i64 = IntegerType::get(TheContext, 64);

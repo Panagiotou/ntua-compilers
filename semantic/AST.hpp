@@ -32,6 +32,7 @@ public:
   static Function *TheWriteString;
 
   // Useful LLVM types.
+  static Type *i1;
   static Type *i8;
   static Type *i32;
   static Type *i64;
@@ -39,6 +40,9 @@ public:
 
 
   // Useful LLVM helper functions.
+  ConstantInt* c1(char c) const {
+    return ConstantInt::get(TheContext, APInt(1, c, true));
+  }
   ConstantInt* c8(char c) const {
     return ConstantInt::get(TheContext, APInt(8, c, true));
   }

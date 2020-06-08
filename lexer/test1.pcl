@@ -1,8 +1,10 @@
 program p;
 var x : integer;
+var b : boolean;
 begin
 x := 0;
-if(x=0) then
+b := x=0;
+if(b and false) then
 begin
 x := x + 1;
 end;

@@ -1500,8 +1500,8 @@ public:
   }
   virtual int eval() const override { return 0; } //wrong
   // virtual void sem() override { type = new Boolean(); }
-  virtual Value* compile() const override { return c32(con);}
-  virtual Value* compile_r() const override { return c32(con);}
+  virtual Value* compile() const override { return c1(con);}
+  virtual Value* compile_r() const override { return c1(con);}
 
 private:
   bool con;
@@ -1671,8 +1671,8 @@ public:
       stmt2->run();
   }
   virtual Value* compile() const override {
-    Value *v = cond->compile();
-    Value *condV = Builder.CreateICmpNE(v, c32(0), "if_cond");
+    Value *v = cond->compile_r();
+
     Function *TheFunction = Builder.GetInsertBlock()->getParent();
     BasicBlock *ThenBB =
       BasicBlock::Create(TheContext, "then", TheFunction);
@@ -1680,7 +1680,7 @@ public:
       BasicBlock::Create(TheContext, "else", TheFunction);
     BasicBlock *AfterBB =
       BasicBlock::Create(TheContext, "endif", TheFunction);
-    Builder.CreateCondBr(condV, ThenBB, ElseBB);
+    Builder.CreateCondBr(v, ThenBB, ElseBB);
     Builder.SetInsertPoint(ThenBB);
     stmt1->compile();
     Builder.CreateBr(AfterBB);
@@ -1692,8 +1692,8 @@ public:
     return nullptr;
   }
   virtual Value* compile_r() const override {
-    Value *v = cond->compile();
-    Value *cond = Builder.CreateICmpNE(v, c32(0), "if_cond");
+    Value *v = cond->compile_r();
+    
     Function *TheFunction = Builder.GetInsertBlock()->getParent();
     BasicBlock *ThenBB =
       BasicBlock::Create(TheContext, "then", TheFunction);
@@ -1701,7 +1701,7 @@ public:
       BasicBlock::Create(TheContext, "else", TheFunction);
     BasicBlock *AfterBB =
       BasicBlock::Create(TheContext, "endif", TheFunction);
-    Builder.CreateCondBr(cond, ThenBB, ElseBB);
+    Builder.CreateCondBr(v, ThenBB, ElseBB);
     Builder.SetInsertPoint(ThenBB);
     stmt1->compile();
     Builder.CreateBr(AfterBB);
@@ -1892,7 +1892,7 @@ public:
         Alloca = Builder.CreateAlloca(Type::getDoubleTy(TheContext), 0, var);
       }
       else{
-        Alloca = Builder.CreateAlloca(IntegerType::get(TheContext, 32), 0, var);
+        Alloca = Builder.CreateAlloca(IntegerType::get(TheContext, 1), 0, var);
       }
 
       // name[1] = '\0';
@@ -1925,7 +1925,7 @@ public:
         Alloca = Builder.CreateAlloca(Type::getDoubleTy(TheContext), 0, var);
       }
       else{
-        Alloca = Builder.CreateAlloca(IntegerType::get(TheContext, 32), 0, var);
+        Alloca = Builder.CreateAlloca(IntegerType::get(TheContext, 1), 0, var);
 
       }
       // name[1] = '\0';
