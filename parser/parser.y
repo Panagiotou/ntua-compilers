@@ -17,6 +17,7 @@
   GlobalVariable *AST::TheRealVars;
   GlobalVariable *AST::TheNL;
   Function *AST::TheWriteInteger;
+  Function *AST::TheWriteReal;
   Function *AST::TheWriteString;
 
   Type *AST::i1 = IntegerType::get(TheContext, 1);

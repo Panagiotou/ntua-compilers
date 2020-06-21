@@ -7,7 +7,6 @@
 #include <llvm/Transforms/Scalar.h>
 #include <llvm/Transforms/Scalar/GVN.h>
 using namespace llvm;
-
 class AST {
 public:
   virtual ~AST() {}
@@ -29,6 +28,7 @@ public:
   static GlobalVariable *TheRealVars;
   static GlobalVariable *TheNL;
   static Function *TheWriteInteger;
+  static Function *TheWriteReal;
   static Function *TheWriteString;
 
   // Useful LLVM types.
@@ -90,9 +90,16 @@ public:
     FunctionType *writeInteger_type =
       FunctionType::get(Type::getVoidTy(TheContext),
                         std::vector<Type *> { i64 }, false);
+    FunctionType *writeReal_type =
+      FunctionType::get(Type::getVoidTy(TheContext),
+                        std::vector<Type *> { DoubleTyID  }, false);
+
     TheWriteInteger =
       Function::Create(writeInteger_type, Function::ExternalLinkage,
                        "writeInteger", TheModule.get());
+    TheWriteReal =
+      Function::Create(writeReal_type, Function::ExternalLinkage,
+                       "writeReal", TheModule.get());
     // declare void @writeString(i8*)
     FunctionType *writeString_type =
       FunctionType::get(Type::getVoidTy(TheContext),
@@ -101,14 +108,20 @@ public:
       Function::Create(writeString_type, Function::ExternalLinkage,
                        "writeString", TheModule.get());
     // Define and start the main function.
+
     Function *main =
       cast<Function>(TheModule->getOrInsertFunction("main", i32));
     BasicBlock *BB = BasicBlock::Create(TheContext, "entry", main);
     Builder.SetInsertPoint(BB);
+
     // Emit the program code.
     compile();
-    // TheModule->print(outs(), nullptr);
     Builder.CreateRet(c32(0));
+    // BasicBlock *AfterBB = Builder.GetInsertBlock()->getParent();
+    // Builder.SetInsertPoint(AfterBB);
+
+    TheModule->print(outs(), nullptr);
+
     // Verify the IR.
     bool bad = verifyModule(*TheModule, &errs());
     if (bad) {
@@ -117,7 +130,7 @@ public:
     }
     TheFPM->run(*main);
     // Print out the IR.
-    TheModule->print(outs(), nullptr);
+    // TheModule->print(outs(), nullptr);
   }
 
 };

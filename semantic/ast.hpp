@@ -311,38 +311,38 @@ public:
         return Builder.CreateICmpSLT(l, r, "lttmp"); // signed less than
       }
     }
-    // if(! strcmp(op, ">")){
-    //   if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
-    //       return Builder.CreateFCmpOGT(l, r, "fgttmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
-    //   }
-    //   else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
-    //     return Builder.CreateICmpSGT(l, r, "lgtmp"); // signed greater than
-    //   }
-    // }
-    // if(! strcmp(op, "<=")){
-    //   if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
-    //       return Builder.CreateFCmpOLE(l, r, "fletmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
-    //   }
-    //   else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
-    //     return Builder.CreateICmpSLE(l, r, "lletmp"); // signed less eq than
-    //   }
-    // }
-    // if(! strcmp(op, ">=")){
-    //   if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
-    //       return Builder.CreateFCmpOGE(l, r, "fgetmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
-    //   }
-    //   else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
-    //     return Builder.CreateICmpSGE(l, r, "lgetmp"); // signed greater eq than
-    //   }
-    // }
-    // if(! strcmp(op, "<>")){
-    //   if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
-    //       return Builder.CreateFCmpONE(l, r, "fnetmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
-    //   }
-    //   else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
-    //     return Builder.CreateICmpNE(l, r, "lnetmp"); // not equal
-    //   }
-    // }
+    if(! strcmp(op, ">")){
+      if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
+          return Builder.CreateFCmpOGT(l, r, "fgttmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
+      }
+      else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
+        return Builder.CreateICmpSGT(l, r, "lgtmp"); // signed greater than
+      }
+    }
+    if(! strcmp(op, "<=")){
+      if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
+          return Builder.CreateFCmpOLE(l, r, "fletmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
+      }
+      else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
+        return Builder.CreateICmpSLE(l, r, "lletmp"); // signed less eq than
+      }
+    }
+    if(! strcmp(op, ">=")){
+      if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
+          return Builder.CreateFCmpOGE(l, r, "fgetmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
+      }
+      else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
+        return Builder.CreateICmpSGE(l, r, "lgetmp"); // signed greater eq than
+      }
+    }
+    if(! strcmp(op, "<>")){
+      if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
+          return Builder.CreateFCmpONE(l, r, "fnetmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
+      }
+      else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
+        return Builder.CreateICmpNE(l, r, "lnetmp"); // not equal
+      }
+    }
     if(! strcmp(op, "div")) return Builder.CreateSDiv(l, r, "divtmp");
     if(! strcmp(op, "mod")) return Builder.CreateSRem(l, r, "modtmp");
     if(! strcmp(op, "or")) return Builder.CreateOr(l, r, "ortmp");
@@ -382,6 +382,38 @@ public:
       }
       else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
         return Builder.CreateICmpSLT(l, r, "lttmp"); // signed less than
+      }
+    }
+    if(! strcmp(op, ">")){
+      if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
+          return Builder.CreateFCmpOGT(l, r, "fgttmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
+      }
+      else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
+        return Builder.CreateICmpSGT(l, r, "lgtmp"); // signed greater than
+      }
+    }
+    if(! strcmp(op, "<=")){
+      if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
+          return Builder.CreateFCmpOLE(l, r, "fletmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
+      }
+      else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
+        return Builder.CreateICmpSLE(l, r, "lletmp"); // signed less eq than
+      }
+    }
+    if(! strcmp(op, ">=")){
+      if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
+          return Builder.CreateFCmpOGE(l, r, "fgetmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
+      }
+      else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
+        return Builder.CreateICmpSGE(l, r, "lgetmp"); // signed greater eq than
+      }
+    }
+    if(! strcmp(op, "<>")){
+      if(left->type->val == TYPE_REAL && right->type->val == TYPE_REAL){
+          return Builder.CreateFCmpONE(l, r, "fnetmp"); // OEQ means ordered eq e.g. expects both operants to be numbers (not NaN)
+      }
+      else if(left->type->val == TYPE_INTEGER && right->type->val == TYPE_INTEGER){
+        return Builder.CreateICmpNE(l, r, "lnetmp"); // not equal
       }
     }
     if(! strcmp(op, "div")) return Builder.CreateSDiv(l, r, "divtmp");
@@ -486,6 +518,9 @@ public:
     Value *V = st.lookup(s)->val;
     Value *ret = Builder.CreateLoad(V, s);
     //This is for testing only
+    // Value *n64 = Builder.CreateFPExt(ret, DoubleTyID, "ext");
+    // Builder.CreateCall(TheWriteReal, std::vector<Value *> { n64 });
+
     // Value *n64 = Builder.CreateZExt(ret, i64, "ext");
     // Builder.CreateCall(TheWriteInteger, std::vector<Value *> { n64 });
     return ret;
@@ -756,7 +791,17 @@ public:
   virtual Value* compile() const override {
     Value *lhs = lval->compile();
     Value *rhs = exprRight->compile_r();
-    Value * ret = Builder.CreateStore(rhs, lhs);
+    Value *ret;
+    if(lval->isResult()){
+      if(!st.existsResult()){
+        st.insert("result", new TypeRes(), rhs);
+      }
+      ret = rhs;
+    }
+    else{
+      ret = Builder.CreateStore(rhs, lhs);
+    }
+
     return ret;
    }
   virtual Value* compile_r() const override {
@@ -2189,7 +2234,43 @@ public:
   virtual OurType *getFunctionType() override{
     return type;
   }
-  virtual Value* compile() const override { return nullptr;}
+  virtual Function *compile() const override {
+    //Check if previously forward declared ?
+    std::string Name = id;
+    Twine name = Twine(Name);
+    llvm::Type *returnTy;
+    llvm::Type *argTy;
+    switch(type->val) {
+      case TYPE_INTEGER: returnTy = i32; break;
+      case TYPE_REAL: returnTy = DoubleTyID; break;
+      case TYPE_BOOLEAN: returnTy = i1; break;
+      default: returnTy = i32; break;
+    }
+
+    std::vector<llvm::Type *> args;
+    std::vector<Formal *> FL = formal_list->getList();
+    for (Formal *f : FL){
+      switch(f->getType()->val) {
+        case TYPE_INTEGER: argTy = i32; break;
+        case TYPE_REAL: argTy = DoubleTyID; break;
+        case TYPE_BOOLEAN: argTy = i1; break;
+        default: argTy = i32; break;
+      }
+      args.push_back(argTy);
+    }
+    // fill up the args vector with types
+
+    Function *func = Function::Create(
+        FunctionType::get(returnTy, args, false),
+        Function::ExternalLinkage,
+        name,
+        TheModule.get()
+    );
+    BasicBlock *BB = BasicBlock::Create(TheContext, "entry", func);
+    Builder.SetInsertPoint(BB);
+    st.insert(Name, func);
+    return func;
+  }
   virtual Value* compile_r() const override { return nullptr;}
 
 private:
@@ -2434,9 +2515,15 @@ public:
     st.openScope();
 
     local_list->compile();
-    block->compile();
-    st.closeScope();
 
+    block->compile();
+    if(st.existsResult()){
+
+      Value *retV = st.lookup("result")->v;
+      Builder.CreateRet(retV);
+    }
+    st.closeScope();
+    // BasicBlock *AfterBB = Builder.GetInsertBlock()->getParent();
     return nullptr;
   }
   virtual Value* compile_r() const override {

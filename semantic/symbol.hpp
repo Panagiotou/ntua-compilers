@@ -11,10 +11,14 @@ struct SymbolEntry {
   int offset;
   std::string s;
   AllocaInst* val;
+  Value* v;
+  Function* f;
 
   SymbolEntry() {}
   SymbolEntry(OurType *t, int ofs, std::string c) : type(t), offset(ofs), s(c){}
   SymbolEntry(OurType *t, int ofs, std::string c, AllocaInst *v) : type(t), offset(ofs), s(c), val(v) {}
+  SymbolEntry(OurType *t, int ofs, std::string c, Value *v) : type(t), offset(ofs), s(c), v(v) {}
+  SymbolEntry(int ofs, std::string c, Function *v) : offset(ofs), s(c), f(v) {}
 };
 
 class Formal_list;
@@ -54,6 +58,34 @@ public:
     procedures[c] = false;
     procedureFormals[c] = nullptr;
     functions[c] = false;
+    functionFormals[c] = nullptr;
+    label[c] = false;
+  }
+  void insert(std::string c, Function *v) {
+    if (locals.find(c) != locals.end()) {
+      print();
+      std::cerr << "Duplicate function " << c << std::endl;
+      exit(1);
+    }
+    locals[c] = SymbolEntry(offset++, c, v);
+    ++size;
+    procedures[c] = false;
+    procedureFormals[c] = nullptr;
+    functions[c] = true;
+    functionFormals[c] = nullptr;
+    label[c] = false;
+  }
+  void insert(std::string c, OurType *t, Value* v) {
+    if (locals.find(c) != locals.end()) {
+      print();
+      std::cerr << "Duplicate variable " << c << std::endl;
+      exit(1);
+    }
+    locals[c] = SymbolEntry(t, offset++, c, v);
+    ++size;
+    procedures[c] = false;
+    procedureFormals[c] = nullptr;
+    functions[c] = true;
     functionFormals[c] = nullptr;
     label[c] = false;
   }
@@ -290,6 +322,9 @@ public:
   int getSizeOfCurrentScope() const { return scopes.back().getSize(); }
   void insert(std::string c, OurType *t) { scopes.back().insert(c, t); }
   void insert(std::string c, OurType *t, AllocaInst *v) { scopes.back().insert(c, t, v); }
+  void insert(std::string c, OurType *t, Value *v) { scopes.back().insert(c, t, v); }
+  void insert(std::string c, Function *v) { scopes.back().insert(c, v); functionFirst = 0;}
+
   bool isProcedure(std::string s){
     for (auto i = scopes.rbegin(); i != scopes.rend(); ++i) {
       if(i->exists(s)) return i->isProcedure(s);
@@ -390,6 +425,7 @@ public:
   int getSize(){
     return scopes.size();
   }
+  int functionFirst = 1;
 private:
   std::vector<Scope> scopes;
 };

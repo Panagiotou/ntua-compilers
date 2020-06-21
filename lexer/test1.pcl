@@ -1,10 +1,8 @@
 program p;
 var x : integer;
-var b : boolean;
+function ten (y : integer):  integer;
 begin
-x:=0;
-while(x<10) do
-  begin
-  x:= x + 1
-  end;
+  result := y;
+end;
+begin
 end.
